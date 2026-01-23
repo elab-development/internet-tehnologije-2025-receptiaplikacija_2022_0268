@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CartBadge from "./CartBadge";
 
 export default function Navbar() {
   return (
@@ -14,9 +15,9 @@ export default function Navbar() {
           <Link href="/recipes" className="hover:underline">
             Recepti
           </Link>
-          <Link href="/cart" className="hover:underline">
-            Korpa
-          </Link>
+
+          <CartBadge />
+
           <Link href="/login" className="hover:underline">
             Prijava
           </Link>
@@ -25,6 +26,5 @@ export default function Navbar() {
     </nav>
   );
 }
-
 
 

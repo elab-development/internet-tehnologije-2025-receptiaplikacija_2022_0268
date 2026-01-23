@@ -1,105 +1,54 @@
-"use client";
+import Link from "next/link";
+import { RECIPES } from "@/lib/recipes";
 
-import { useMemo, useState } from "react";
-import Input from "@/components/Input";
-import Card from "@/components/Card";
-import Button from "@/components/Button";
 
-const MOCK_RECIPES = [
-  { id: 1, title: "Pasta Carbonara", tag: "italijansko" },
-  { id: 2, title: "Grčka salata", tag: "salata" },
-  { id: 3, title: "Pileći kari", tag: "azijsko" },
-  { id: 4, title: "Palenta sa sirom", tag: "domaće" },
-  { id: 5, title: "Tuna sendvič", tag: "brzo" },
-  { id: 6, title: "Čorba od povrća", tag: "domaće" },
-];
-
-const PAGE_SIZE = 3;
 
 export default function RecipesPage() {
-  const [query, setQuery] = useState("");
-  const [tag, setTag] = useState("sve");
-  const [page, setPage] = useState(1);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MOCK_RECIPES.filter((r) => {
-      const matchesQuery = q === "" || r.title.toLowerCase().includes(q);
-      const matchesTag = tag === "sve" || r.tag === tag;
-      return matchesQuery && matchesTag;
-    });
-  }, [query, tag]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="text-2xl font-semibold">Recepti</h1>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <Input
-          label="Pretraga"
-          placeholder="npr. pasta..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-        />
-
-        <label className="block">
-          <span className="mb-1 block text-sm">Filter</span>
-          <select
-            className="w-full rounded border px-3 py-2"
-            value={tag}
-            onChange={(e) => {
-              setTag(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="sve">Sve</option>
-            <option value="domaće">Domaće</option>
-            <option value="italijansko">Italijansko</option>
-            <option value="azijsko">Azijsko</option>
-            <option value="salata">Salata</option>
-            <option value="brzo">Brzo</option>
-          </select>
-        </label>
-
-        <div className="flex items-end gap-2">
-          <Button
-            onClick={() => {
-              setQuery("");
-              setTag("sve");
-              setPage(1);
-            }}
-          >
-            Reset
-          </Button>
-          <div className="text-sm text-gray-600">Ukupno: {filtered.length}</div>
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Recepti</h1>
+          <p className="text-sm text-gray-600">
+            Izaberi recept i otvori detalje (sledeći korak pravimo stranicu detalja).
+          </p>
         </div>
+
+        <Link
+          href="/cart"
+          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+        >
+          Idi u korpu →
+        </Link>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
-        {pageItems.map((r) => (
-          <Card key={r.id} title={r.title}>
-            Tag: {r.tag}
-          </Card>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {RECIPES.map((r) => (
+          <div key={r.id} className="rounded-lg border bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-lg font-medium">{r.title}</h2>
+              <span className="rounded-full border px-2 py-1 text-xs">
+                {r.difficulty}
+              </span>
+            </div>
+
+            <p className="mt-2 text-sm text-gray-700">{r.description}</p>
+
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm text-gray-600">⏱ {r.timeMin} min</span>
+
+              {/* Za sada vodi na placeholder, kasnije pravimo /recipes/[id] */}
+              <Link
+                href={`/recipes/${r.id}`}
+                className="text-sm font-medium hover:underline"
+              >
+                Pogledaj detalje →
+              </Link>
+            </div>
+          </div>
         ))}
-      </div>
-
-      <div className="mt-6 flex items-center gap-2">
-        <Button onClick={() => setPage((p) => Math.max(1, p - 1))}>
-          Prethodna
-        </Button>
-        <span className="text-sm">
-          Strana {page} / {totalPages}
-        </span>
-        <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-          Sledeća
-        </Button>
       </div>
     </main>
   );
 }
+
