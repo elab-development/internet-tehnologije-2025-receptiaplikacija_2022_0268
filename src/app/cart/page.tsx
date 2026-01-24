@@ -12,7 +12,9 @@ export default function CartPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Korpa</h1>
-          <p className="text-sm text-gray-600">Ukupno stavki: {totalItems}</p>
+          <p className="text-sm text-gray-600">
+            Ukupno stavki: {totalItems}
+          </p>
         </div>
 
         <Link href="/recipes" className="underline">
@@ -32,7 +34,9 @@ export default function CartPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-medium">{item.recipe.title}</h2>
+                    <h2 className="text-lg font-medium">
+                      {item.recipe.title}
+                    </h2>
                     <p className="text-sm text-gray-600">
                       {item.recipe.description}
                     </p>
@@ -49,16 +53,18 @@ export default function CartPage() {
                 <div className="mt-4 flex items-center gap-3">
                   <button
                     onClick={() => decrease(item.recipe.id)}
-                    className="rounded-md border px-3 py-1 hover:bg-gray-50"
+                    className="rounded-md border px-3 py-1"
                   >
                     -
                   </button>
 
-                  <span className="min-w-[24px] text-center">{item.qty}</span>
+                  <span className="min-w-[24px] text-center">
+                    {item.qty}
+                  </span>
 
                   <button
                     onClick={() => increase(item.recipe.id)}
-                    className="rounded-md border px-3 py-1 hover:bg-gray-50"
+                    className="rounded-md border px-3 py-1"
                   >
                     +
                   </button>
@@ -69,7 +75,7 @@ export default function CartPage() {
 
           <button
             onClick={clearCart}
-            className="mt-6 rounded-md border px-4 py-2 hover:bg-gray-50"
+            className="mt-6 rounded-md border px-4 py-2"
           >
             Isprazni korpu
           </button>
@@ -78,6 +84,3 @@ export default function CartPage() {
     </main>
   );
 }
-
-
-  

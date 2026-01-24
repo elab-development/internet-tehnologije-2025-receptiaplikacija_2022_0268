@@ -1,9 +1,71 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-client";
+
 export default function LoginPage() {
-    return (
-      <main className="mx-auto max-w-5xl p-6">
-        <h1 className="text-2xl font-semibold">Prijava</h1>
-        <p className="mt-2">Ovde će biti login forma.</p>
-      </main>
-    );
-  }
-  
+  const router = useRouter();
+  const { refresh } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data?.ok) {
+      setError(data?.error ?? "Greška pri prijavi");
+      setLoading(false);
+      return;
+    }
+
+    await refresh();      
+    router.push("/");   
+
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="max-w-sm mx-auto mt-10 space-y-4">
+      <h1 className="text-xl font-semibold">Prijava</h1>
+
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        className="w-full border p-2"
+      />
+
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Lozinka"
+        className="w-full border p-2"
+      />
+
+      {error && <p className="text-red-600 text-sm">{error}</p>}
+
+      <button
+        disabled={loading}
+        className="w-full border p-2 hover:bg-gray-50"
+      >
+        {loading ? "Prijavljivanje..." : "Prijava"}
+      </button>
+    </form>
+  );
+}

@@ -1,119 +1,150 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { Recipe } from "@/lib/recipes";
+import { useAuth } from "@/lib/auth-client";
 
-type CartItem = {
-  recipe: Recipe;
+export type CartItem = {
+  id: string; // id proizvoda / recepta
+  title: string;
+  price: number;
   qty: number;
+  image?: string;
 };
 
-type CartContextValue = {
+type CartCtx = {
   items: CartItem[];
-  addToCart: (recipe: Recipe) => void;
-  removeFromCart: (id: string) => void;
-  increase: (id: string) => void;
-  decrease: (id: string) => void;
-  clearCart: () => void;
   totalItems: number;
+  addToCart: (item: Omit<CartItem, "qty">, qty?: number) => void;
+  removeFromCart: (id: string) => void;
+  setQty: (id: string, qty: number) => void;
+  clearCart: () => void;
 };
 
-const CartContext = createContext<CartContextValue | null>(null);
+const CartContext = createContext<CartCtx | null>(null);
+
+function readStorage(key: string): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // minimalna validacija
+    return parsed
+      .filter((x) => x && typeof x.id === "string")
+      .map((x) => ({
+        id: String(x.id),
+        title: String(x.title ?? ""),
+        price: Number(x.price ?? 0),
+        qty: Number(x.qty ?? 1),
+        image: x.image ? String(x.image) : undefined,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function writeStorage(key: string, items: CartItem[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch {
+    // ignore
+  }
+}
+
+function mergeItems(a: CartItem[], b: CartItem[]) {
+  // spajanje po id, sabira qty
+  const map = new Map<string, CartItem>();
+  for (const it of a) map.set(it.id, { ...it });
+  for (const it of b) {
+    const prev = map.get(it.id);
+    if (!prev) map.set(it.id, { ...it });
+    else map.set(it.id, { ...prev, qty: prev.qty + it.qty });
+  }
+  return Array.from(map.values());
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  // ✅ auth može biti null (ako provider nije mountovan ili dok se ne učita)
+  let auth: ReturnType<typeof useAuth> | null = null;
+  try {
+    auth = useAuth();
+  } catch {
+    auth = null;
+  }
+  const userId = auth?.user?.id ?? null;
+
+  // guest vs user storage key
+  const storageKey = userId ? `cart:user:${userId}` : "cart:guest";
+
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // 1) Učitaj iz localStorage kad se app startuje
+  // učitaj korpu kad se promeni storageKey (npr. login/logout)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("cart");
-      if (!raw) return;
-  
-      const parsed = JSON.parse(raw);
-  
-      if (Array.isArray(parsed)) {
-        setItems(parsed);
-      } else {
-        localStorage.removeItem("cart");
-        setItems([]);
-      }
-    } catch {
-      localStorage.removeItem("cart");
-      setItems([]);
-    }
-  }, []);
-  
+    const next = readStorage(storageKey);
+    setItems(next);
+  }, [storageKey]);
 
-  // 2) Snimi u localStorage kad se items promene
+  // opcionalno: kad se user uloguje, spoji guest korpu u user korpu
   useEffect(() => {
-    console.log("✅ SAVING TO localStorage cart =", items);
-    localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
-  
+    if (!userId) return;
 
-  const addToCart = (recipe: Recipe) => {
-    console.log("✅ addToCart CALLED, recipe.id =", recipe?.id);
-  
+    const guestKey = "cart:guest";
+    const guest = readStorage(guestKey);
+    if (!guest.length) return;
+
+    const userKey = `cart:user:${userId}`;
+    const currentUser = readStorage(userKey);
+
+    const merged = mergeItems(currentUser, guest);
+    writeStorage(userKey, merged);
+    localStorage.removeItem(guestKey);
+    setItems(merged);
+  }, [userId]);
+
+  // upis u storage na svaku promenu items
+  useEffect(() => {
+    writeStorage(storageKey, items);
+  }, [storageKey, items]);
+
+  const addToCart: CartCtx["addToCart"] = (item, qty = 1) => {
+    const addQty = Math.max(1, qty);
     setItems((prev) => {
-      const existing = prev.find((i) => i.recipe.id === recipe.id);
-      const next = existing
-        ? prev.map((i) =>
-            i.recipe.id === recipe.id ? { ...i, qty: i.qty + 1 } : i
-          )
-        : [...prev, { recipe, qty: 1 }];
-  
-      console.log("✅ CART NEXT =", next);
+      const idx = prev.findIndex((p) => p.id === item.id);
+      if (idx === -1) return [...prev, { ...item, qty: addQty }];
+      const next = [...prev];
+      next[idx] = { ...next[idx], qty: next[idx].qty + addQty };
       return next;
     });
   };
-  
-  const removeFromCart = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.recipe.id !== id));
+
+  const removeFromCart: CartCtx["removeFromCart"] = (id) => {
+    setItems((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const increase = (id: string) => {
-    setItems((prev) =>
-      prev.map((i) => (i.recipe.id === id ? { ...i, qty: i.qty + 1 } : i))
-    );
-  };
-
-  const decrease = (id: string) => {
-    setItems((prev) =>
-      prev
-        .map((i) => (i.recipe.id === id ? { ...i, qty: i.qty - 1 } : i))
-        .filter((i) => i.qty > 0)
-    );
+  const setQty: CartCtx["setQty"] = (id, qty) => {
+    const q = Math.max(1, Number(qty) || 1);
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, qty: q } : p)));
   };
 
   const clearCart = () => setItems([]);
 
   const totalItems = useMemo(
-    () => items.reduce((sum, i) => sum + i.qty, 0),
+    () => items.reduce((sum, it) => sum + (Number(it.qty) || 0), 0),
     [items]
   );
 
-  const value: CartContextValue = {
-    items,
-    addToCart,
-    removeFromCart,
-    increase,
-    decrease,
-    clearCart,
-    totalItems,
-  };
+  const value: CartCtx = useMemo(
+    () => ({ items, totalItems, addToCart, removeFromCart, setQty, clearCart }),
+    [items, totalItems]
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
-    const ctx = useContext(CartContext);
-  
-    if (!ctx) {
-      throw new Error("useCart must be used within CartProvider");
-    }
-  
-    return ctx;
-  }
-  
-  
-  
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
+  return ctx;
+}
