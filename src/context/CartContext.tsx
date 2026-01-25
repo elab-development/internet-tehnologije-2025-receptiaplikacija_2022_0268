@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import { useAuth } from "@/lib/auth-client";
 
 export type CartItem = {
-  id: string; // id proizvoda / recepta
+  id: string;
   title: string;
   price: number;
   qty: number;
@@ -18,6 +18,9 @@ type CartCtx = {
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clearCart: () => void;
+
+  lastAddedTitle: string | null;
+  clearToast: () => void;
 };
 
 const CartContext = createContext<CartCtx | null>(null);
@@ -29,12 +32,12 @@ function readStorage(key: string): CartItem[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // minimalna validacija
+
     return parsed
-      .filter((x) => x && typeof x.id === "string")
+    .filter((x) => x && typeof x.id === "string" && (x.title || x.recipe?.title))
       .map((x) => ({
         id: String(x.id),
-        title: String(x.title ?? ""),
+        title: String(x.title ?? x.recipe?.title ?? ""),
         price: Number(x.price ?? 0),
         qty: Number(x.qty ?? 1),
         image: x.image ? String(x.image) : undefined,
@@ -49,12 +52,11 @@ function writeStorage(key: string, items: CartItem[]) {
   try {
     localStorage.setItem(key, JSON.stringify(items));
   } catch {
-    // ignore
+    
   }
 }
 
 function mergeItems(a: CartItem[], b: CartItem[]) {
-  // spajanje po id, sabira qty
   const map = new Map<string, CartItem>();
   for (const it of a) map.set(it.id, { ...it });
   for (const it of b) {
@@ -66,7 +68,6 @@ function mergeItems(a: CartItem[], b: CartItem[]) {
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  // ✅ auth može biti null (ako provider nije mountovan ili dok se ne učita)
   let auth: ReturnType<typeof useAuth> | null = null;
   try {
     auth = useAuth();
@@ -75,18 +76,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
   const userId = auth?.user?.id ?? null;
 
-  // guest vs user storage key
   const storageKey = userId ? `cart:user:${userId}` : "cart:guest";
 
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // učitaj korpu kad se promeni storageKey (npr. login/logout)
+  const [lastAddedTitle, setLastAddedTitle] = useState<string | null>(null);
+  const clearToast = () => setLastAddedTitle(null);
+
   useEffect(() => {
     const next = readStorage(storageKey);
     setItems(next);
   }, [storageKey]);
 
-  // opcionalno: kad se user uloguje, spoji guest korpu u user korpu
   useEffect(() => {
     if (!userId) return;
 
@@ -103,13 +104,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(merged);
   }, [userId]);
 
-  // upis u storage na svaku promenu items
   useEffect(() => {
     writeStorage(storageKey, items);
   }, [storageKey, items]);
 
   const addToCart: CartCtx["addToCart"] = (item, qty = 1) => {
     const addQty = Math.max(1, qty);
+
+    setLastAddedTitle(item.title || "Proizvod");
+    window.setTimeout(() => setLastAddedTitle(null), 1500);
+
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.id === item.id);
       if (idx === -1) return [...prev, { ...item, qty: addQty }];
@@ -136,8 +140,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value: CartCtx = useMemo(
-    () => ({ items, totalItems, addToCart, removeFromCart, setQty, clearCart }),
-    [items, totalItems]
+    () => ({
+      items,
+      totalItems,
+      addToCart,
+      removeFromCart,
+      setQty,
+      clearCart,
+      lastAddedTitle,
+      clearToast,
+    }),
+    [items, totalItems, lastAddedTitle]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

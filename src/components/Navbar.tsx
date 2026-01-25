@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
+import { useCart } from "@/context/CartContext";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // ✅ "optional" ponašanje bez useAuthOptional exporta
   let auth: ReturnType<typeof useAuth> | null = null;
   try {
     auth = useAuth();
@@ -18,6 +18,9 @@ export default function Navbar() {
 
   const user = auth?.user ?? null;
   const loading = auth?.loading ?? false;
+
+  const cart = useCart();
+  const lastAddedTitle = cart.lastAddedTitle;
 
   async function onLogout() {
     try {
@@ -40,9 +43,22 @@ export default function Navbar() {
             Recepti
           </Link>
 
-          <Link href="/cart" className="hover:underline">
+          {/* ✅ KORPA SA BADGE-OM */}
+          <Link href="/cart" className="relative hover:underline">
             Korpa
+            {cart.totalItems > 0 && (
+              <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                {cart.totalItems}
+              </span>
+            )}
           </Link>
+
+          {/* ✅ TOAST */}
+          {lastAddedTitle && (
+            <span className="rounded-md bg-green-100 px-2 py-1 text-xs text-green-800">
+              Dodato: {lastAddedTitle}
+            </span>
+          )}
 
           {loading ? (
             <span className="text-sm text-gray-500">Učitavanje...</span>
@@ -60,7 +76,6 @@ export default function Navbar() {
                 Odjava
               </button>
             </>
-
           ) : (
             <Link href="/login" className="hover:underline">
               Prijava
@@ -71,3 +86,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
