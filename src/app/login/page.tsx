@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,8 +34,8 @@ export default function LoginPage() {
       return;
     }
 
-    await refresh();      
-    router.push("/");   
+    await refresh();
+    router.push("/");
 
     setLoading(false);
   };
@@ -66,6 +67,15 @@ export default function LoginPage() {
       >
         {loading ? "Prijavljivanje..." : "Prijava"}
       </button>
+      <p className="text-sm text-center">
+        Nemate nalog?{" "}
+        <Link href="/registracija" className="text-blue-600 hover:underline">
+          Registrujte se
+        </Link>
+
+      </p>
+
+
     </form>
   );
 }
