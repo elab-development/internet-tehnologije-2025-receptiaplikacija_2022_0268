@@ -13,6 +13,8 @@ export default function RegistracijaPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
+  const [role, setRole] = useState<"KUPAC" | "KUVAR">("KUPAC");
+
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,8 @@ export default function RegistracijaPage() {
       return;
     }
 
+
+
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
@@ -41,6 +45,7 @@ export default function RegistracijaPage() {
           phone,
           email,
           password,
+          role,
         }),
       });
 
@@ -96,6 +101,32 @@ export default function RegistracijaPage() {
               placeholder="+3816xxxxxxx"
             />
           </div>
+
+          <div>
+            <label className="text-sm text-gray-200">Prijavljujem se kao</label>
+            <div className="mt-2 flex gap-3">
+              <label className="flex items-center gap-2 rounded-lg border bg-transparent p-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  checked={role === "KUPAC"}
+                  onChange={() => setRole("KUPAC")}
+                />
+                Kupac
+              </label>
+
+              <label className="flex items-center gap-2 rounded-lg border bg-transparent p-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  checked={role === "KUVAR"}
+                  onChange={() => setRole("KUVAR")}
+                />
+                Kuvar
+              </label>
+            </div>
+          </div>
+
 
           <div>
             <label className="text-sm text-gray-200">Email</label>

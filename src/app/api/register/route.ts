@@ -8,7 +8,12 @@ import { Prisma } from "@prisma/client";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
-    
+    const roleRaw = body?.role;
+
+    let role: "KUPAC" | "KUVAR" = "KUPAC";
+    if (roleRaw === "KUVAR") {
+      role = "KUVAR";
+    }
 
     const emailRaw = typeof body?.email === "string" ? body.email : "";
     const password = typeof body?.password === "string" ? body.password : "";
@@ -58,13 +63,14 @@ export async function POST(req: Request) {
       data: {
         email,
         passwordHash,
-        role: "KUPAC",
+        role,
         firstName,
         lastName,
         phone,
       },
       select: { id: true, email: true, role: true },
     });
+
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
   } catch (err: any) {
