@@ -77,9 +77,7 @@ export default function RegistracijaPage() {
               <input
                 className="mt-1 w-full rounded-lg border bg-transparent p-2"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Jana"
-              />
+                onChange={(e) => setFirstName(e.target.value)}              />
             </div>
             <div>
               <label className="text-sm text-gray-200">Prezime</label>
@@ -87,7 +85,6 @@ export default function RegistracijaPage() {
                 className="mt-1 w-full rounded-lg border bg-transparent p-2"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Jovanović"
               />
             </div>
           </div>
