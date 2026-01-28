@@ -1,12 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RECIPES } from "@/lib/recipes";
+
+const FAV_LS_KEY = "favoriteRecipeIds";
 
 export default function RecipesPage() {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("SVE");
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(FAV_LS_KEY);
+    if (saved) setFavorites(JSON.parse(saved));
+  }, []);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -42,7 +58,6 @@ export default function RecipesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold">Recepti</h1>
-          
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -68,30 +83,48 @@ export default function RecipesPage() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((r) => (
-          <Link
-            key={r.id}
-            href={`/recipes/${encodeURIComponent(r.id)}`}
-            className="rounded-lg border bg-white p-4 transition hover:shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-lg font-semibold leading-snug">{r.title}</h2>
-              {r.isPremium && (
-                <span className="shrink-0 rounded-full border px-2 py-1 text-xs">
-                  ⭐ PREMIUM
-                </span>
-              )}
-            </div>
+        {filtered.map((r) => {
+          const isFav = favorites.includes(r.id);
 
-            <p className="mt-2 line-clamp-3 text-sm text-gray-700">{r.short}</p>
+          return (
+            <div key={r.id} className="rounded-lg border bg-white p-4 transition hover:shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="min-w-0 flex-1">
+                  <h2 className="text-lg font-semibold leading-snug">{r.title}</h2>
+                </Link>
 
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
-              <span className="rounded-md border px-2 py-1">⏱ {r.timeMin} min</span>
-              <span className="rounded-md border px-2 py-1">⚡ {r.difficulty}</span>
-              <span className="rounded-md border px-2 py-1">🏷 {r.category}</span>
+                <div className="flex items-center gap-2">
+                  {r.isPremium && (
+                    <span className="shrink-0 rounded-full border px-2 py-1 text-xs">
+                      ⭐ PREMIUM
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    className="text-xl"
+                    title="Omiljeni"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite(r.id);
+                    }}
+                  >
+                    {isFav ? "❤️" : "🤍"}
+                  </button>
+                </div>
+              </div>
+
+              <p className="mt-2 line-clamp-3 text-sm text-gray-700">{r.short}</p>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+                <span className="rounded-md border px-2 py-1">⏱ {r.timeMin} min</span>
+                <span className="rounded-md border px-2 py-1">⚡ {r.difficulty}</span>
+                <span className="rounded-md border px-2 py-1">🏷 {r.category}</span>
+              </div>
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (
