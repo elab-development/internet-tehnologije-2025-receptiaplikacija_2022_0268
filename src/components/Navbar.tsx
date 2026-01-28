@@ -43,7 +43,10 @@ export default function Navbar() {
             Recepti
           </Link>
 
-          {/* ✅ KORPA SA BADGE-OM */}
+          <Link href="/sastojci" className="hover:underline">
+            Sastojci
+          </Link>
+
           <Link href="/cart" className="relative hover:underline">
             Korpa
             {cart.totalItems > 0 && (
@@ -53,7 +56,6 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* ✅ TOAST */}
           {lastAddedTitle && (
             <span className="rounded-md bg-green-100 px-2 py-1 text-xs text-green-800">
               Dodato: {lastAddedTitle}
@@ -86,4 +88,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
