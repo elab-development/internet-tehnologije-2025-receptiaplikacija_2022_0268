@@ -4,27 +4,29 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RECIPES } from "@/lib/recipes";
+import { getIsPremiumUser } from "@/lib/premium";
 
-const LS_KEY = "favoriteRecipeIds";
+const FAV_LS_KEY = "favoriteRecipeIds";
 
 export default function RecipeDetailsPage() {
   const params = useParams<{ id: string }>();
-  const id = decodeURIComponent(params?.id ?? "");
-  const recipe = RECIPES.find((r) => r.id === id);
+  const id = decodeURIComponent(params?.id ?? "").trim();
+
+  const recipe = RECIPES.find((r) => r.id.trim() === id);
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [isPremiumUser, setIsPremiumUserState] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY);
+    const saved = localStorage.getItem(FAV_LS_KEY);
     if (saved) setFavorites(JSON.parse(saved));
+    setIsPremiumUserState(getIsPremiumUser());
   }, []);
 
   const toggleFavorite = () => {
     setFavorites((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
-      localStorage.setItem(LS_KEY, JSON.stringify(updated));
+      const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
       return updated;
     });
   };
@@ -33,7 +35,37 @@ export default function RecipeDetailsPage() {
     return (
       <main className="mx-auto max-w-3xl px-4 py-8">
         <p>Recept nije pronađen.</p>
-        <Link href="/recipes">Nazad</Link>
+        <Link href="/recipes" className="underline">
+          Nazad
+        </Link>
+      </main>
+    );
+  }
+
+  const locked = recipe.isPremium && !isPremiumUser;
+
+  if (locked) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <Link href="/recipes" className="text-sm underline">
+          ← Nazad na recepte
+        </Link>
+
+        <div className="mt-6 rounded-lg border bg-white p-5">
+          <h1 className="text-2xl font-semibold">🔒 Premium recept</h1>
+          <p className="mt-2 text-gray-700">
+            Ovaj recept je dostupan samo premium korisnicima.
+          </p>
+
+          <div className="mt-4 flex gap-3">
+            <Link href="/profile" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+              Idi na profil
+            </Link>
+            <Link href="/recipes" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+              Vrati se na recepte
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }
@@ -42,40 +74,48 @@ export default function RecipeDetailsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/recipes" className="underline">
-        ← Nazad
+      <Link href="/recipes" className="text-sm underline">
+        ← Nazad na recepte
       </Link>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold">{recipe.title}</h1>
-
-        <button onClick={toggleFavorite} className="text-2xl">
+        <button onClick={toggleFavorite} className="text-2xl" title="Omiljeni">
           {isFav ? "❤️" : "🤍"}
         </button>
       </div>
 
-      <div className="mt-2 flex gap-3 text-sm text-gray-600">
+      <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
         <span>⏱ {recipe.timeMin} min</span>
         <span>⚡ {recipe.difficulty}</span>
         <span>🏷 {recipe.category}</span>
         {recipe.isPremium && <span>⭐ PREMIUM</span>}
       </div>
 
-      <p className="mt-6">{recipe.short}</p>
+      <div className="mt-6 rounded-lg border bg-white p-4">
+        <h2 className="text-lg font-medium">Ukratko</h2>
+        <p className="mt-2 text-gray-700">{recipe.short}</p>
+      </div>
 
-      <h2 className="mt-6 font-medium">Sastojci</h2>
-      <ul className="list-disc pl-5">
-        {recipe.ingredients.map((i, idx) => (
-          <li key={idx}>{i}</li>
-        ))}
-      </ul>
+      <p className="mt-6 text-gray-700">{recipe.description}</p>
 
-      <h2 className="mt-6 font-medium">Priprema</h2>
-      <ol className="list-decimal pl-5">
-        {recipe.steps.map((s, idx) => (
-          <li key={idx}>{s}</li>
-        ))}
-      </ol>
+      <div className="mt-8 rounded-lg border bg-white p-4">
+        <h2 className="text-lg font-medium">Sastojci</h2>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700">
+          {recipe.ingredients.map((ing, idx) => (
+            <li key={idx}>{ing}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-6 rounded-lg border bg-white p-4">
+        <h2 className="text-lg font-medium">Priprema</h2>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-gray-700">
+          {recipe.steps.map((step, idx) => (
+            <li key={idx}>{step}</li>
+          ))}
+        </ol>
+      </div>
     </main>
   );
 }

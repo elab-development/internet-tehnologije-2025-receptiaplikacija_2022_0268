@@ -26,9 +26,9 @@ export const RECIPES: Recipe[] = [
     steps: [
       "Skuvati pastu u slanoj vodi.",
       "Ispržiti slaninu dok ne postane hrskava.",
-      "Umutiti jaja i parmezan.",
+      "Umutiti žumanca i parmezan.",
       "Pomešati pastu sa slaninom i skloniti sa vatre.",
-      "Dodati smesu od jaja i brzo promešati."
+      "Dodati smesu od jaja i brzo promešatina tihoj vatri."
     ]
   },
   {

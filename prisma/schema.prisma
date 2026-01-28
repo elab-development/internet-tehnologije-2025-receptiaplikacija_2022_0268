@@ -34,6 +34,8 @@ model User {
   passwordHash String
   role         Role     @default(KUPAC)
   isBlocked    Boolean  @default(false)
+  isPremium    Boolean @default(false)
+
 
   recipes      Recipe[]
   favorites    Favorite[]
@@ -80,6 +82,8 @@ model Recipe {
   prepTimeMinutes Int
   imageUrl        String?
   isPublished     Boolean  @default(false)
+  isPremium Boolean @default(false)
+
 
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
