@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RECIPES } from "@/lib/recipes";
-import { getIsPremiumUser } from "@/lib/premium";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 
@@ -15,17 +14,17 @@ export default function RecipeDetailsPage() {
   const recipe = RECIPES.find((r) => r.id.trim() === id);
 
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [isPremiumUser, setIsPremiumUserState] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(FAV_LS_KEY);
     if (saved) setFavorites(JSON.parse(saved));
-    setIsPremiumUserState(getIsPremiumUser());
   }, []);
 
   const toggleFavorite = () => {
     setFavorites((prev) => {
-      const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      const updated = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
       localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
       return updated;
     });
@@ -38,34 +37,6 @@ export default function RecipeDetailsPage() {
         <Link href="/recipes" className="underline">
           Nazad
         </Link>
-      </main>
-    );
-  }
-
-  const locked = recipe.isPremium && !isPremiumUser;
-
-  if (locked) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <Link href="/recipes" className="text-sm underline">
-          ← Nazad na recepte
-        </Link>
-
-        <div className="mt-6 rounded-lg border bg-white p-5">
-          <h1 className="text-2xl font-semibold">🔒 Premium recept</h1>
-          <p className="mt-2 text-gray-700">
-            Ovaj recept je dostupan samo premium korisnicima.
-          </p>
-
-          <div className="mt-4 flex gap-3">
-            <Link href="/profile" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-              Idi na profil
-            </Link>
-            <Link href="/recipes" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-              Vrati se na recepte
-            </Link>
-          </div>
-        </div>
       </main>
     );
   }
