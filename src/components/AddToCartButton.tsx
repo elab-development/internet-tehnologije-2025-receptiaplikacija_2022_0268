@@ -1,24 +1,42 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
-import type { Recipe } from "@/lib/recipes";
 
-export default function AddToCartButton({ recipe }: { recipe: Recipe }) {
-  const { addToCart, totalItems } = useCart();
+type Props = {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+};
+
+export default function AddToCartButton({
+  id,
+  title,
+  price,
+  image,
+}: Props) {
+  const { addToCart } = useCart();
+
+  const handleAdd = () => {
+    addToCart(
+      {
+        id,
+        kind: "RECIPE",
+        title,
+        price,
+        image,
+      },
+      1
+    );
+  };
 
   return (
     <button
-      onClick={() => {
-        console.log("CLICK AddToCartButton", recipe);
-        addToCart(recipe);
-        console.log("AFTER addToCart, totalItems:", totalItems);
-      }}
-      className="mt-6 rounded-md border px-4 py-2 hover:bg-gray-50"
+      type="button"
+      onClick={handleAdd}
+      className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
     >
       Dodaj u korpu
     </button>
   );
 }
-
-
-
