@@ -3,234 +3,135 @@ require("dotenv").config();
 const { PrismaClient, Role } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 
-
-
 const prisma = new PrismaClient();
 
-async function main() {
-  const email = "test@test.com";
-  const password = "123456";
 
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await prisma.user.upsert({
-    where: { email },
-    update: { passwordHash },
-    create: {
-      email,
-      passwordHash,
-      role: Role.KUPAC,
-    },
-  });
-
-  console.log("Seeded user:", email);
-
- const INGREDIENT_GROUPS = {
-  "Mlečni proizvodi": [
-    "mleko",
-    "jogurt",
-    "kiselo mleko",
-    "kefir",
-    "pavlaka",
-    "slatka pavlaka",
-    "kajmak",
-    "maslac",
-    "puter",
-    "sir",
-    "mladi sir",
-    "feta sir",
-    "mozzarella",
-    "gauda",
-    "parmezan",
+const INGREDIENT_GROUPS = {
+  "Mlečni proizvodi i jaja": [
+    "mleko", "jogurt", "kiselo mleko", "kefir",
+    "pavlaka", "slatka pavlaka",
+    "maslac", "puter",
+    "sir", "mladi sir", "feta sir", "mozzarella", "parmezan",
     "krem sir",
-    "rikota",
+    "jaja",
   ],
 
   "Meso i suhomesnato": [
-    "piletina",
-    "ćuretina",
-    "junetina",
-    "svinjetina",
-    "teletina",
+    "piletina", "ćuretina", "junetina", "svinjetina",
     "mleveno meso",
-    "slanina",
-    "kobasica",
-    "šunka",
-    "pršuta",
-    "kulen",
-    "pileća prsa",
+    "slanina", "kobasica", "šunka",
   ],
 
   "Riba i morski plodovi": [
-    "losos",
-    "tuna",
-    "oslić",
-    "skuša",
-    "pastrmka",
-    "bakalar",
-    "sardina",
-    "škampi",
-    "lignje",
-    "dagnje",
-  ],
-
-  "Voće": [
-    "jabuka",
-    "banana",
-    "kruška",
-    "limun",
-    "narandža",
-    "mandarina",
-    "grejp",
-    "jagoda",
-    "malina",
-    "borovnica",
-    "breskva",
-    "kajsija",
-    "ananas",
-    "grožđe",
-    "dinja",
+    "tuna", "losos", "oslić",
+    "škampi", "lignje",
   ],
 
   "Povrće": [
-    "krompir",
-    "luk",
-    "beli luk",
-    "šargarepa",
-    "celer",
-    "praziluk",
-    "paradajz",
-    "paprika",
-    "krastavac",
-    "tikvica",
-    "patlidžan",
-    "brokoli",
-    "karfiol",
-    "kupus",
-    "kiseli kupus",
-    "spanać",
-    "blitva",
-    "zelena salata",
-    "pečurke",
+    "krompir", "luk", "beli luk", "šargarepa",
+    "paradajz", "paprika", "krastavac",
+    "tikvica", "brokoli", "karfiol",
+    "kupus", "spanać", "pečurke",
+  ],
+
+  "Voće": [
+    "jabuka", "banana", "kruška",
+    "limun", "narandža", "mandarina",
+    "jagoda", "malina", "borovnica",
+    "grožđe", "kajsija",
   ],
 
   "Žitarice i testenine": [
-    "brašno",
-    "kukuruzno brašno",
-    "griz",
-    "pirinač",
-    "testenina",
-    "špagete",
-    "makarone",
-    "kus-kus",
-    "bulgur",
-    "ovsene pahuljice",
-    "hleb",
-    "tortilje",
-    "prezle",
+    "brašno", "pirinač",
+    "testenina", "špagete", "makarone", "kus-kus",
+    "ovsene pahuljice", "hleb", "prezle",
   ],
 
-  "Mahunarke": [
-    "pasulj",
-    "sočivo",
-    "leblebija",
-    "grašak",
-    "boranija",
-    "crveni pasulj",
-  ],
-
-  "Začini i bilje": [
-    "so",
-    "biber",
-    "origano",
-    "bosiljak",
-    "peršun",
-    "ruzmarin",
-    "majčina dušica",
-    "lovorov list",
-    "čili",
-    "kurkuma",
-    "kari",
+  "Začini": [
+    "so", "biber", "origano", "bosiljak", "peršun",
+    "lovorov list", "čili",
     "paprika začinska",
-    "beli luk u prahu",
-    "cimet",
-    "muškatni oraščić",
+    "cimet", "muškatni oraščić",
     "soda bikarbona",
   ],
 
-  "Ulja, sirća i sosovi": [
-    "maslinovo ulje",
-    "suncokretovo ulje",
-    "kokosovo ulje",
-    "sirće",
-    "balzamiko",
-    "soja sos",
-    "senf",
-    "kečap",
-    "majonez",
+  "Ulja i sosovi": [
+    "maslinovo ulje", "suncokretovo ulje",
+    "sirće", "balzamiko",
+    "senf", "kečap", "majonez",
     "paradajz sos",
   ],
 
-  "Slatki dodaci": [
-    "šećer",
-    "vanilin šećer",
-    "med",
-    "kakao",
-    "čokolada",
+  "Slatko": [
+    "šećer", "vanilin šećer",
+    "med", "kakao", "čokolada",
     "prašak za pecivo",
-    "puding",
-    "nutela",
-  ],
-
-  "Orašasti plodovi i semenke": [
-    "orasi",
-    "lešnici",
-    "bademi",
-    "kikiriki",
-    "pistaći",
-    "susam",
-    "lan",
-    "chia",
-    "suncokretove semenke",
-    "bundeva semenke",
-  ],
-
-  "Konzervirano i iz tegle": [
-    "pelat",
-    "paradajz pire",
-    "kukuruz",
-    "masline",
-    "krastavci kiseli",
-    "ajvar",
-    "tuna u konzervi",
-    "pasulj iz konzerve",
-  ],
-
-  "Pića": [
-    "voda",
-    "mineralna voda",
-    "sok od narandže",
-    "mleko biljno",
-    "kafa",
-    "čaj",
   ],
 };
 
+async function seedUsers() {
+  const passwordHash = await bcrypt.hash("123456", 10);
 
-  const allIngredients = Object.values(INGREDIENT_GROUPS).flat();
+  const users = [
+    { email: "kupac@test.com", role: Role.KUPAC },
+    { email: "kuvar@test.com", role: Role.KUVAR },
+    { email: "admin@test.com", role: Role.ADMIN },
+  ];
 
-  for (const name of allIngredients) {
-    await prisma.ingredient.upsert({
-      where: { name },
-      update: {},
-      create: { name },
+  for (const u of users) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: { passwordHash, role: u.role },
+      create: { email: u.email, passwordHash, role: u.role },
     });
   }
 
-  console.log("Seeded ingredients:", allIngredients.length);
+  console.log("✅ Seeded users:", users.map((u) => u.email).join(", "));
+}
+
+async function seedIngredientCategoriesAndIngredients() {
+  
+  await prisma.ingredient.deleteMany({});
+  await prisma.categoryIngredient.deleteMany({});
+
+ 
+  const categoryNameToId = {};
+
+  for (const categoryName of Object.keys(INGREDIENT_GROUPS)) {
+    const cat = await prisma.categoryIngredient.create({
+      data: { name: categoryName },
+    });
+    categoryNameToId[categoryName] = cat.id;
+  }
+
+  
+  let count = 0;
+
+  for (const [categoryName, items] of Object.entries(INGREDIENT_GROUPS)) {
+    const categoryId = categoryNameToId[categoryName];
+
+    for (const name of items) {
+      await prisma.ingredient.create({
+        data: { name, categoryId },
+      });
+      count++;
+    }
+  }
+
+  console.log("✅ Seeded ingredient categories:", Object.keys(INGREDIENT_GROUPS).length);
+  console.log("✅ Seeded ingredients:", count);
+}
+
+async function main() {
+  await seedUsers();
+  await seedIngredientCategoriesAndIngredients();
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
-
+  .catch((e) => {
+    console.error("❌ Seed error:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
