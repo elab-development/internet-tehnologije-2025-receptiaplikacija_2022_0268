@@ -77,11 +77,15 @@ model Recipe {
 }
 
 model Ingredient {
-  id         String              @id @default(cuid())
-  name       String              @unique
-  categoryId String?
-  category   CategoryIngredient? @relation(fields: [categoryId], references: [id])
-  recipes    RecipeIngredient[]
+  id           String              @id @default(cuid())
+  name         String              @unique
+
+  defaultUnit  String?
+  defaultQty   Int?
+
+  categoryId   String?
+  category     CategoryIngredient? @relation(fields: [categoryId], references: [id])
+  recipes      RecipeIngredient[]
 }
 
 model RecipeIngredient {

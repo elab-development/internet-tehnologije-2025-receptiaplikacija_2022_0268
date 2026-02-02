@@ -14,12 +14,20 @@ export default function IngredientQty({ id, title }: Props) {
   const qty = inCart?.qty ?? 0;
 
   const plus = () => {
-    addToCart({ id, kind: "INGREDIENT", title, price: 0 }, 1);
+    addToCart(
+      {
+        id,
+        kind: "INGREDIENT", // ⭐ KLJUČNO
+        title,
+        price: 0,
+      },
+      1
+    );
   };
 
   const minus = () => {
     if (qty <= 1) {
-      removeFromCart(id); // kad padne na 0 -> izbaci
+      removeFromCart(id);
     } else {
       setQty(id, qty - 1);
     }

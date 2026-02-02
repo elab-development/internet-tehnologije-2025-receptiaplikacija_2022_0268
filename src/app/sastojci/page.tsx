@@ -1,30 +1,33 @@
 import { prisma } from "../../lib/prisma";
 import IngredientQty from "@/components/IngredientQty";
 
+
+
+type GroupedItem = {
+  id: string;
+  name: string;
+  defaultUnit: string | null;
+  defaultQty: number | null;
+};
+
 export default async function SastojciPage() {
   const ingredients = await prisma.ingredient.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: [
-      { category: { name: "asc" } },
-      { name: "asc" },
-    ],
+    include: { category: true },
+    orderBy: [{ category: { name: "asc" } }, { name: "asc" }],
   });
 
-  // Grupisanje sastojaka po kategoriji (iz baze)
-  const grouped: Record<string, { id: string; name: string }[]> = {};
+  const grouped: Record<string, GroupedItem[]> = {};
 
   for (const ing of ingredients) {
     const categoryName = ing.category?.name ?? "Ostalo";
 
-    if (!grouped[categoryName]) {
-      grouped[categoryName] = [];
-    }
+    if (!grouped[categoryName]) grouped[categoryName] = [];
 
     grouped[categoryName].push({
       id: ing.id,
       name: ing.name,
+      defaultUnit: ing.defaultUnit ?? null,
+      defaultQty: ing.defaultQty ?? null,
     });
   }
 
@@ -47,13 +50,20 @@ export default async function SastojciPage() {
                   key={item.id}
                   className="flex items-center justify-between rounded-2xl border p-5"
                 >
-                  <span className="text-lg font-semibold">{item.name}</span>
+                  {}
+                  <div className="min-w-0">
+                    <div className="text-lg font-semibold">{item.name}</div>
 
-                  {/* PLUS / MINUS KOLIČINA */}
-                  <IngredientQty
-                    id={item.id}
-                    title={item.name}
-                  />
+                    {}
+                    <div className="text-sm text-gray-600">
+                      {item.defaultQty != null && item.defaultUnit != null
+                        ? `${item.defaultQty} ${item.defaultUnit}`
+                        : "Nema podrazumevane količine"}
+                    </div>
+                  </div>
+
+                  {}
+                  <IngredientQty id={item.id} title={item.name} />
                 </div>
               ))}
             </div>
