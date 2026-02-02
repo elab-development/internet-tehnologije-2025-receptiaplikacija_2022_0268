@@ -17,7 +17,6 @@ export async function GET() {
       );
     }
 
-    // 1) Cookie sadrži TOKEN -> tražimo ga u Session tabeli
     const dbSession = await prisma.session.findUnique({
       where: { token },
       select: { userId: true, expiresAt: true },
@@ -30,7 +29,6 @@ export async function GET() {
       );
     }
 
-    // 2) (opciono) provera isteka
     if (dbSession.expiresAt && dbSession.expiresAt < new Date()) {
       return NextResponse.json(
         { ok: false, error: "Sesija je istekla." },
@@ -38,7 +36,6 @@ export async function GET() {
       );
     }
 
-    // 3) Dohvati usera po userId
     const user = await prisma.user.findUnique({
       where: { id: dbSession.userId },
       select: { id: true, email: true, role: true, isPremium: true },

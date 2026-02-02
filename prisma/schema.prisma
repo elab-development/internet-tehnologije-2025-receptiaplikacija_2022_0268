@@ -53,6 +53,7 @@ model CategoryIngredient {
 
 model Recipe {
   id              String             @id @default(cuid())
+  slug            String   @unique
   title           String
   description     String
   difficulty      Int
