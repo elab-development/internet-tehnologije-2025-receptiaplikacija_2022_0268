@@ -28,28 +28,18 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-start justify-between gap-4">
-  <div>
-    <h1 className="text-2xl font-semibold">Profil</h1>
-    <p className="text-sm text-gray-600">
-      Ovde su tvoji omiljeni recepti i recenzije.
-    </p>
+        <div>
+          <h1 className="text-2xl font-semibold">Profil</h1>
+          <p className="text-sm text-gray-600">Ovde su tvoji omiljeni recepti.</p>
+        </div>
 
-    <Link
-      href="/profile/reviews"
-      className="mt-2 inline-block text-sm underline"
-    >
-      Moje recenzije
-    </Link>
-  </div>
-
-  <Link
-    href="/recipes"
-    className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-  >
-    ← Nazad na recepte
-  </Link>
-</div>
-
+        <Link
+          href="/recipes"
+          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+        >
+          ← Nazad na recepte
+        </Link>
+      </div>
 
       <h2 className="text-lg font-medium">❤️ Omiljeni</h2>
 

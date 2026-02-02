@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RECIPES } from "@/lib/recipes";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 
 export default function RecipesPage() {
-  const searchId = useId();
-  const categoryId = useId();
-
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("SVE");
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -21,9 +18,7 @@ export default function RecipesPage() {
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
+      const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
       return updated;
     });
@@ -66,24 +61,14 @@ export default function RecipesPage() {
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {/* label za input */}
-          <label htmlFor={searchId} className="sr-only">
-            Pretraga recepata
-          </label>
           <input
-            id={searchId}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Pretraga (npr. pasta, piletina...)"
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 sm:w-72"
           />
 
-          {/* label za select */}
-          <label htmlFor={categoryId} className="sr-only">
-            Filter po kategoriji
-          </label>
           <select
-            id={categoryId}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 sm:w-52"
@@ -102,18 +87,10 @@ export default function RecipesPage() {
           const isFav = favorites.includes(r.id);
 
           return (
-            <div
-              key={r.id}
-              className="rounded-lg border bg-white p-4 transition hover:shadow-sm"
-            >
+            <div key={r.id} className="rounded-lg border bg-white p-4 transition hover:shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <Link
-                  href={`/recipes/${encodeURIComponent(r.id)}`}
-                  className="min-w-0 flex-1"
-                >
-                  <h2 className="text-lg font-semibold leading-snug">
-                    {r.title}
-                  </h2>
+                <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="min-w-0 flex-1">
+                  <h2 className="text-lg font-semibold leading-snug">{r.title}</h2>
                 </Link>
 
                 <div className="flex items-center gap-2">
