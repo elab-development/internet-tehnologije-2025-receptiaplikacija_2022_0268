@@ -5,21 +5,22 @@ import { useCart } from "@/context/CartContext";
 type Props = {
   id: string;
   title: string;
+  priceRsd: number | null; 
 };
 
-export default function IngredientQty({ id, title }: Props) {
+export default function IngredientQty({ id, title, priceRsd }: Props) {
   const { items, addToCart, setQty, removeFromCart } = useCart();
 
-  const inCart = items.find((x) => x.id === id);
+  const inCart = items.find((x) => x.id === id && x.kind === "INGREDIENT");
   const qty = inCart?.qty ?? 0;
 
   const plus = () => {
     addToCart(
       {
         id,
-        kind: "INGREDIENT", // ⭐ KLJUČNO
+        kind: "INGREDIENT",
         title,
-        price: 0,
+        priceRsd: priceRsd ?? 0, 
       },
       1
     );
@@ -27,9 +28,9 @@ export default function IngredientQty({ id, title }: Props) {
 
   const minus = () => {
     if (qty <= 1) {
-      removeFromCart(id);
+      removeFromCart(id, "INGREDIENT");
     } else {
-      setQty(id, qty - 1);
+      setQty(id, "INGREDIENT", qty - 1);
     }
   };
 

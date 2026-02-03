@@ -1,19 +1,23 @@
 import { prisma } from "../../lib/prisma";
 import IngredientQty from "@/components/IngredientQty";
 
-
-
 type GroupedItem = {
   id: string;
   name: string;
   defaultUnit: string | null;
   defaultQty: number | null;
+  priceRsd: number | null;
 };
 
 export default async function SastojciPage() {
   const ingredients = await prisma.ingredient.findMany({
-    include: { category: true },
-    orderBy: [{ category: { name: "asc" } }, { name: "asc" }],
+    include: {
+      category: true,
+    },
+    orderBy: [
+      { category: { name: "asc" } },
+      { name: "asc" },
+    ],
   });
 
   const grouped: Record<string, GroupedItem[]> = {};
@@ -21,13 +25,16 @@ export default async function SastojciPage() {
   for (const ing of ingredients) {
     const categoryName = ing.category?.name ?? "Ostalo";
 
-    if (!grouped[categoryName]) grouped[categoryName] = [];
+    if (!grouped[categoryName]) {
+      grouped[categoryName] = [];
+    }
 
     grouped[categoryName].push({
       id: ing.id,
       name: ing.name,
       defaultUnit: ing.defaultUnit ?? null,
       defaultQty: ing.defaultQty ?? null,
+      priceRsd: ing.priceRsd ?? null,
     });
   }
 
@@ -52,7 +59,10 @@ export default async function SastojciPage() {
                 >
                   {}
                   <div className="min-w-0">
-                    <div className="text-lg font-semibold">{item.name}</div>
+                    {}
+                    <div className="text-lg font-semibold">
+                      {item.name}
+                    </div>
 
                     {}
                     <div className="text-sm text-gray-600">
@@ -60,10 +70,21 @@ export default async function SastojciPage() {
                         ? `${item.defaultQty} ${item.defaultUnit}`
                         : "Nema podrazumevane količine"}
                     </div>
+
+                    {}
+                    <div className="text-sm text-gray-800 font-medium mt-1">
+                      {item.priceRsd != null
+                        ? `${item.priceRsd} RSD`
+                        : "Cena nije definisana"}
+                    </div>
                   </div>
 
                   {}
-                  <IngredientQty id={item.id} title={item.name} />
+                  <IngredientQty
+                    id={item.id}
+                    title={item.name}
+                    priceRsd={item.priceRsd ?? 0}
+                  />
                 </div>
               ))}
             </div>

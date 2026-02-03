@@ -60,6 +60,7 @@ const INGREDIENT_GROUPS = {
   ],
 };
 
+
 const INGREDIENT_META = {
   "mleko": { unit: "ml", qty: 1000 },
   "jogurt": { unit: "ml", qty: 1000 },
@@ -133,12 +134,12 @@ const INGREDIENT_META = {
   "origano": { unit: "g", qty: 100 },
   "bosiljak": { unit: "g", qty: 100 },
   "peršun": { unit: "g", qty: 100 },
-  "lovorov list": { unit: "g", qty: 100 },
-  "čili": { unit: "g", qty: 100 },
+  "lovorov list": { unit: "g", qty: 20 },
+  "čili": { unit: "g", qty: 50 },
   "paprika začinska": { unit: "g", qty: 100 },
-  "cimet": { unit: "g", qty: 100 },
-  "muškatni oraščić": { unit: "g", qty: 100 },
-  "soda bikarbona": { unit: "g", qty: 100 },
+  "cimet": { unit: "g", qty: 50 },
+  "muškatni oraščić": { unit: "g", qty: 20 },
+  "soda bikarbona": { unit: "g", qty: 200 },
 
   "maslinovo ulje": { unit: "ml", qty: 1000 },
   "suncokretovo ulje": { unit: "ml", qty: 1000 },
@@ -157,6 +158,104 @@ const INGREDIENT_META = {
   "prašak za pecivo": { unit: "g", qty: 12 },
 };
 
+
+const PRICE_RSD = {
+  "mleko": 170,
+  "jogurt": 220,
+  "kiselo mleko": 150,
+  "kefir": 180,
+  "pavlaka": 160,
+  "slatka pavlaka": 220,
+  "maslac": 330,
+  "puter": 300,
+  "sir": 450,
+  "mladi sir": 380,
+  "feta sir": 360,
+  "mozzarella": 200,
+  "parmezan": 250,
+  "krem sir": 220,
+  "jaja": 280,
+
+  "piletina": 450,
+  "ćuretina": 600,
+  "junetina": 800,
+  "svinjetina": 550,
+  "mleveno meso": 650,
+  "slanina": 420,
+  "kobasica": 380,
+  "šunka": 420,
+
+  "tuna": 260,
+  "losos": 900,
+  "oslić": 500,
+  "škampi": 900,
+  "lignje": 650,
+
+  "krompir": 160,
+  "luk": 180,
+  "beli luk": 120,
+  "šargarepa": 180,
+  "paradajz": 250,
+  "paprika": 300,
+  "krastavac": 80,
+  "tikvica": 90,
+  "brokoli": 180,
+  "karfiol": 170,
+  "kupus": 120,
+  "spanać": 180,
+  "pečurke": 250,
+
+  "jabuka": 50,
+  "banana": 60,
+  "kruška": 60,
+  "limun": 70,
+  "narandža": 60,
+  "mandarina": 50,
+  "jagoda": 450,
+  "malina": 400,
+  "borovnica": 500,
+  "grožđe": 300,
+  "kajsija": 350,
+
+  "brašno": 120,
+  "pirinač": 220,
+  "testenina": 160,
+  "špagete": 170,
+  "makarone": 160,
+  "kus-kus": 260,
+  "ovsene pahuljice": 180,
+  "hleb": 80,
+  "prezle": 120,
+
+  "so": 60,
+  "biber": 220,
+  "origano": 150,
+  "bosiljak": 160,
+  "peršun": 80,
+  "lovorov list": 120,
+  "čili": 120,
+  "paprika začinska": 160,
+  "cimet": 160,
+  "muškatni oraščić": 180,
+  "soda bikarbona": 120,
+
+  "maslinovo ulje": 1200,
+  "suncokretovo ulje": 260,
+  "sirće": 180,
+  "balzamiko": 450,
+  "senf": 150,
+  "kečap": 220,
+  "majonez": 260,
+  "paradajz sos": 220,
+
+  "šećer": 140,
+  "vanilin šećer": 30,
+  "med": 450,
+  "kakao": 220,
+  "čokolada": 180,
+  "prašak za pecivo": 25,
+};
+
 async function seedUsers() {
   const passwordHash = await bcrypt.hash("123456", 10);
 
@@ -173,10 +272,12 @@ async function seedUsers() {
       create: { email: u.email, passwordHash, role: u.role },
     });
   }
+
   console.log("✅ Seeded users");
 }
 
-async function seedIngredientCategoriesAndIngredients() {
+async function seedIngredients() {
+
   await prisma.ingredient.deleteMany({});
   await prisma.categoryIngredient.deleteMany({});
 
@@ -187,7 +288,7 @@ async function seedIngredientCategoriesAndIngredients() {
     categoryNameToId[categoryName] = cat.id;
   }
 
-
+ 
   let count = 0;
 
   for (const [categoryName, items] of Object.entries(INGREDIENT_GROUPS)) {
@@ -195,6 +296,7 @@ async function seedIngredientCategoriesAndIngredients() {
 
     for (const name of items) {
       const meta = INGREDIENT_META[name] ?? null;
+      const priceRsd = PRICE_RSD[name] ?? null;
 
       await prisma.ingredient.create({
         data: {
@@ -202,6 +304,7 @@ async function seedIngredientCategoriesAndIngredients() {
           categoryId,
           defaultUnit: meta?.unit ?? null,
           defaultQty: meta?.qty ?? null,
+          priceRsd, 
         },
       });
 
@@ -215,7 +318,7 @@ async function seedIngredientCategoriesAndIngredients() {
 
 async function main() {
   await seedUsers();
-  await seedIngredientCategoriesAndIngredients();
+  await seedIngredients();
 }
 
 main()

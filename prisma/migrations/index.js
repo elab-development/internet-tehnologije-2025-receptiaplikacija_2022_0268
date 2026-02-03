@@ -10,18 +10,18 @@ app.use(bodyParser.json());
 app.post("/register", async (req, res) => {
     const { ime, prezime, email, sifra, potvrdaSifre } = req.body;
   
-    // 1. Provera da li su sva polja popunjena
+   
     if (!ime || !prezime || !email || !sifra || !potvrdaSifre) {
       return res.status(400).json({ message: "Sva polja su obavezna" });
     }
   
-    // 2. Provera da li se sifre poklapaju
+    
     if (sifra !== potvrdaSifre) {
       return res.status(400).json({ message: "Sifre se ne poklapaju" });
     }
   
     try {
-      // 3. Provera da li email vec postoji
+    
       const postoji = await prisma.user.findUnique({
         where: { email }
       });
@@ -30,10 +30,10 @@ app.post("/register", async (req, res) => {
         return res.status(400).json({ message: "Email vec postoji" });
       }
   
-      // 4. Hash sifre
+      
       const hashedSifra = await bcrypt.hash(sifra, 10);
   
-      // 5. Upis u bazu
+
       const noviKorisnik = await prisma.user.create({
         data: {
           ime,
