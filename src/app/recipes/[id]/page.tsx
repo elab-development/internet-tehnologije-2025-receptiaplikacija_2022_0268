@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { RECIPES } from "@/lib/recipes";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
+const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
 
 export default function RecipeDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -14,18 +15,29 @@ export default function RecipeDetailsPage() {
   const recipe = RECIPES.find((r) => r.id.trim() === id);
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [purchased, setPurchased] = useState<string[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(FAV_LS_KEY);
-    if (saved) setFavorites(JSON.parse(saved));
+    const savedFav = localStorage.getItem(FAV_LS_KEY);
+    if (savedFav) setFavorites(JSON.parse(savedFav));
+
+    const savedPremium = localStorage.getItem(PREMIUM_LS_KEY);
+    if (savedPremium) setPurchased(JSON.parse(savedPremium));
   }, []);
 
   const toggleFavorite = () => {
     setFavorites((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
+      const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const buyPremium = () => {
+    setPurchased((prev) => {
+      if (prev.includes(id)) return prev;
+      const updated = [...prev, id];
+      localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(updated));
       return updated;
     });
   };
@@ -42,6 +54,8 @@ export default function RecipeDetailsPage() {
   }
 
   const isFav = favorites.includes(id);
+  const isBought = purchased.includes(id);
+  const locked = recipe.isPremium && !isBought;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -61,6 +75,7 @@ export default function RecipeDetailsPage() {
         <span>⚡ {recipe.difficulty}</span>
         <span>🏷 {recipe.category}</span>
         {recipe.isPremium && <span>⭐ PREMIUM</span>}
+        {recipe.isPremium && isBought && <span>✅ Kupljeno</span>}
       </div>
 
       <div className="mt-6 rounded-lg border bg-white p-4">
@@ -68,25 +83,42 @@ export default function RecipeDetailsPage() {
         <p className="mt-2 text-gray-700">{recipe.short}</p>
       </div>
 
-      <p className="mt-6 text-gray-700">{recipe.description}</p>
+      {locked ? (
+        <div className="mt-6 rounded-lg border bg-white p-4">
+          <h2 className="text-lg font-medium">Premium sadržaj</h2>
+          <p className="mt-2 text-gray-700">
+            Ovaj recept je premium. Kupi da bi video/la opis, sastojke i pripremu.
+          </p>
+          <button
+            onClick={buyPremium}
+            className="mt-4 rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            Kupi premium recept
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="mt-6 text-gray-700">{recipe.description}</p>
 
-      <div className="mt-8 rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-medium">Sastojci</h2>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700">
-          {recipe.ingredients.map((ing, idx) => (
-            <li key={idx}>{ing}</li>
-          ))}
-        </ul>
-      </div>
+          <div className="mt-8 rounded-lg border bg-white p-4">
+            <h2 className="text-lg font-medium">Sastojci</h2>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700">
+              {recipe.ingredients.map((ing, idx) => (
+                <li key={idx}>{ing}</li>
+              ))}
+            </ul>
+          </div>
 
-      <div className="mt-6 rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-medium">Priprema</h2>
-        <ol className="mt-3 list-decimal space-y-1 pl-5 text-gray-700">
-          {recipe.steps.map((step, idx) => (
-            <li key={idx}>{step}</li>
-          ))}
-        </ol>
-      </div>
+          <div className="mt-6 rounded-lg border bg-white p-4">
+            <h2 className="text-lg font-medium">Priprema</h2>
+            <ol className="mt-3 list-decimal space-y-1 pl-5 text-gray-700">
+              {recipe.steps.map((step, idx) => (
+                <li key={idx}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        </>
+      )}
     </main>
   );
 }
