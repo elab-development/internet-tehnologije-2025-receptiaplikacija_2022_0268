@@ -7,7 +7,6 @@ import { RECIPES } from "@/lib/recipes";
 import { useCart } from "@/context/CartContext";
 import ReviewsSection from "@/components/ReviewsSection";
 
-
 const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
 
@@ -63,7 +62,7 @@ export default function RecipeDetailsPage() {
   const locked = recipe.isPremium && !isBought;
 
   const addRecipeToCart = () => {
-    if (recipe.isPremium && !isBought) return;
+    if (locked) return; // ✅ premium logika ostaje
 
     const priceRsd = recipe.isPremium ? Number((recipe as any).priceRsd ?? 0) : 0;
 
@@ -77,10 +76,7 @@ export default function RecipeDetailsPage() {
       },
       1
     );
-    console.log("ReviewsSection typeof:", typeof ReviewsSection, ReviewsSection);
-
   };
-
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -142,7 +138,6 @@ export default function RecipeDetailsPage() {
             Kupi premium recept ({Number((recipe as any).priceRsd ?? 0)} RSD)
           </button>
 
-          {/*  */}
           <div className="mt-6 text-sm text-gray-600">
             Recenzije su dostupne nakon kupovine premium sadržaja.
           </div>
@@ -152,7 +147,18 @@ export default function RecipeDetailsPage() {
           <p className="mt-6 text-gray-700">{recipe.description}</p>
 
           <div className="mt-8 rounded-lg border bg-white p-4">
-            <h2 className="text-lg font-medium">Sastojci</h2>
+            {/* ✅ Dugme je OVDE i zato ne može da se prikaže kad je premium zaključan */}
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-medium">Sastojci</h2>
+
+              <Link
+                href="/sastojci"
+                className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+              >
+                Kupi sastojke
+              </Link>
+            </div>
+
             <ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700">
               {recipe.ingredients.map((ing, idx) => (
                 <li key={idx}>{ing}</li>
@@ -169,8 +175,7 @@ export default function RecipeDetailsPage() {
             </ol>
           </div>
 
-          {/* prikaz recenzija */}
-         <ReviewsSection recipeId={id} />
+          <ReviewsSection recipeId={id} />
         </>
       )}
     </main>

@@ -5,16 +5,11 @@ import { useCart } from "@/context/CartContext";
 type Props = {
   id: string;
   title: string;
-  price: number;
+  priceRsd: number;
   image?: string;
 };
 
-export default function AddToCartButton({
-  id,
-  title,
-  price,
-  image,
-}: Props) {
+export default function AddToCartButton({ id, title, priceRsd, image }: Props) {
   const { addToCart } = useCart();
 
   const handleAdd = () => {
@@ -23,7 +18,7 @@ export default function AddToCartButton({
         id,
         kind: "RECIPE",
         title,
-        price,
+        priceRsd,
         image,
       },
       1
