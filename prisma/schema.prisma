@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String           @id @default(cuid())
+  email        String           @unique
   name         String?
   passwordHash String
-  role         Role       @default(KUPAC)
-  isBlocked    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  role         Role             @default(KUPAC)
+  isBlocked    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   firstName    String?
   lastName     String?
-  phone        String?    @unique
-  isPremium    Boolean    @default(false)
+  phone        String?          @unique
+  isPremium    Boolean          @default(false)
   cart         Cart?
   favorites    Favorite[]
   orders       Order[]
   recipes      Recipe[]
   reviews      Review[]
   sessions     Session[]
+  purchases    RecipePurchase[]
 }
 
 model Session {
@@ -52,16 +53,16 @@ model CategoryIngredient {
 }
 
 model Ingredient {
-  id          String              @id @default(cuid())
-  name        String              @unique
+  id   String @id @default(cuid())
+  name String @unique
 
   categoryId  String?
   defaultQty  Int?
   defaultUnit String?
-  priceRsd    Int?      
+  priceRsd    Int?
 
-  category    CategoryIngredient? @relation(fields: [categoryId], references: [id])
-  recipes     RecipeIngredient[]
+  category CategoryIngredient? @relation(fields: [categoryId], references: [id])
+  recipes  RecipeIngredient[]
 }
 
 model Recipe {
@@ -77,12 +78,14 @@ model Recipe {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   isPremium       Boolean            @default(false)
+  priceRSD        Int                @default(0)
   favorites       Favorite[]
   author          User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category        CategoryRecipe     @relation(fields: [categoryId], references: [id])
   ingredients     RecipeIngredient[]
   reviews         Review[]
   steps           Step[]
+  purchases       RecipePurchase[]
 
   @@index([authorId])
   @@index([categoryId])
@@ -182,4 +185,19 @@ enum Role {
   KUPAC
   KUVAR
   ADMIN
+}
+
+model RecipePurchase {
+  id        String   @id @default(cuid())
+  userId    String
+  recipeId  String
+  priceRsd  Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+  @@index([recipeId])
 }

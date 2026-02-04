@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Recipe" ADD COLUMN     "priceRSD" INTEGER NOT NULL DEFAULT 0;

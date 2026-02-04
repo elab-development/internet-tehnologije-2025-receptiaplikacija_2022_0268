@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RECIPES } from "@/lib/recipes";
+import { useCart } from "@/context/CartContext";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
@@ -16,6 +17,8 @@ export default function RecipeDetailsPage() {
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [purchased, setPurchased] = useState<string[]>([]);
+
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const savedFav = localStorage.getItem(FAV_LS_KEY);
@@ -57,6 +60,23 @@ export default function RecipeDetailsPage() {
   const isBought = purchased.includes(id);
   const locked = recipe.isPremium && !isBought;
 
+  const addRecipeToCart = () => {
+    if (recipe.isPremium && !isBought) return;
+
+    const priceRsd = recipe.isPremium ? Number((recipe as any).priceRsd ?? 0) : 0;
+
+    addToCart(
+      {
+        id: recipe.id,
+        kind: "RECIPE",
+        title: recipe.title,
+        priceRsd,
+        image: (recipe as any).imageUrl ?? undefined,
+      },
+      1
+    );
+  };
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <Link href="/recipes" className="text-sm underline">
@@ -70,12 +90,32 @@ export default function RecipeDetailsPage() {
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600">
         <span>⏱ {recipe.timeMin} min</span>
         <span>⚡ {recipe.difficulty}</span>
         <span>🏷 {recipe.category}</span>
-        {recipe.isPremium && <span>⭐ PREMIUM</span>}
+
+        {recipe.isPremium && (
+          <span className="rounded-full bg-yellow-100 px-2 py-1 text-sm text-yellow-800">
+            ⭐ PREMIUM • {Number((recipe as any).priceRsd ?? 0)} RSD
+          </span>
+        )}
+
         {recipe.isPremium && isBought && <span>✅ Kupljeno</span>}
+
+        <button
+          onClick={addRecipeToCart}
+          disabled={locked}
+          className={`rounded-md border px-3 py-2 text-sm ${
+            locked ? "cursor-not-allowed opacity-50" : "hover:bg-gray-50"
+          }`}
+        >
+          Dodaj u korpu
+        </button>
+
+        <Link href="/cart" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+          Korpa →
+        </Link>
       </div>
 
       <div className="mt-6 rounded-lg border bg-white p-4">
@@ -89,11 +129,12 @@ export default function RecipeDetailsPage() {
           <p className="mt-2 text-gray-700">
             Ovaj recept je premium. Kupi da bi video/la opis, sastojke i pripremu.
           </p>
+
           <button
             onClick={buyPremium}
             className="mt-4 rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
           >
-            Kupi premium recept
+            Kupi premium recept ({Number((recipe as any).priceRsd ?? 0)} RSD)
           </button>
         </div>
       ) : (

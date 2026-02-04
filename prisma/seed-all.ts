@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 
 
 
+
 function norm(s: string) {
   return (s ?? "")
     .toLowerCase()
@@ -506,11 +507,13 @@ async function seedRecipes() {
   }
 
 
-  const old = await prisma.recipe.findMany({
-    where: { authorId: chef.id },
-    select: { id: true },
-  });
-  const oldIds = old.map((x) => x.id);
+ const old = (await prisma.recipe.findMany({
+  where: { authorId: chef.id },
+  select: { id: true },
+})) as { id: string }[];
+
+const oldIds = old.map((x) => x.id);
+
 
   if (oldIds.length > 0) {
     await prisma.recipeIngredient.deleteMany({ where: { recipeId: { in: oldIds } } });
