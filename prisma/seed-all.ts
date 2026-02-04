@@ -245,6 +245,8 @@ const INGREDIENT_GROUPS: Record<string, string[]> = {
     "soda bikarbona",
     "kari",
     "začini",
+    "susam",
+    
   ],
   "Ulja i sosovi": [
     "maslinovo ulje",
@@ -335,6 +337,29 @@ const INGREDIENT_META: Record<string, Meta> = {
 
   "šećer": { unit: "g", qty: 1000, priceRsd: 140 },
   med: { unit: "g", qty: 300, priceRsd: 420 },
+
+  "indijski orah": { unit: "g", qty: 200, priceRsd: 480 },
+  susam: { unit: "g", qty: 100, priceRsd: 160 },
+
+  lignje: { unit: "g", qty: 500, priceRsd: 850 },
+  škampi: { unit: "g", qty: 500, priceRsd: 1200 },
+  oslić: { unit: "g", qty: 500, priceRsd: 700 },
+
+  čokolada: { unit: "g", qty: 100, priceRsd: 180 },
+  "prašak za pecivo": { unit: "g", qty: 10, priceRsd: 30 },
+  kakao: { unit: "g", qty: 100, priceRsd: 220 },
+  "vanilin šećer": { unit: "g", qty: 10, priceRsd: 25 },
+
+  balzamiko: { unit: "ml", qty: 250, priceRsd: 350 },
+  majonez: { unit: "g", qty: 200, priceRsd: 190 },
+  senf: { unit: "g", qty: 200, priceRsd: 150 },
+  sirće: { unit: "ml", qty: 1000, priceRsd: 120 },
+  kečap: { unit: "g", qty: 500, priceRsd: 210 },
+  "paradajz sos": { unit: "g", qty: 500, priceRsd: 180 },
+
+kari: { unit: "ml", qty: 100, priceRsd: 200 },
+
+
 };
 
 async function seedIngredientsWithMeta() {
