@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
-  const { items, setQty, removeFromCart, clearCart, totalItems, totalPriceRsd } = useCart();
+  const { items, setQty, removeFromCart, clearCart, totalItems, totalPriceRsd } =
+    useCart();
+
+  const canCheckout = items.length > 0;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
@@ -25,7 +28,10 @@ export default function CartPage() {
         <>
           <div className="mt-8 space-y-4">
             {items.map((item) => (
-              <div key={`${item.kind}-${item.id}`} className="rounded-lg border bg-white p-4">
+              <div
+                key={`${item.kind}-${item.id}`}
+                className="rounded-lg border bg-white p-4"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-medium">{item.title}</h2>
@@ -47,7 +53,9 @@ export default function CartPage() {
 
                 <div className="mt-4 flex items-center gap-3">
                   <button
-                    onClick={() => setQty(item.id, item.kind, Math.max(1, item.qty - 1))}
+                    onClick={() =>
+                      setQty(item.id, item.kind, Math.max(1, item.qty - 1))
+                    }
                     className="rounded-md border px-3 py-1"
                   >
                     -
@@ -66,12 +74,27 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <p className="text-lg font-semibold">Ukupno: {totalPriceRsd} RSD</p>
 
-            <button onClick={clearCart} className="rounded-md border px-4 py-2">
-              Isprazni korpu
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/checkout"
+                aria-disabled={!canCheckout}
+                className={`rounded bg-black px-5 py-2 text-white ${
+                  canCheckout ? "hover:bg-gray-800" : "pointer-events-none opacity-50"
+                }`}
+              >
+                Poruči
+              </Link>
+
+              <button
+                onClick={clearCart}
+                className="rounded-md border px-4 py-2"
+              >
+                Isprazni korpu
+              </button>
+            </div>
           </div>
         </>
       )}

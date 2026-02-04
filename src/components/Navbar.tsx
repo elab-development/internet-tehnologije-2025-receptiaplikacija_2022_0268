@@ -20,7 +20,6 @@ export default function Navbar() {
   const loading = auth?.loading ?? false;
 
   const cart = useCart();
-  const lastAddedTitle = cart.lastAddedTitle;
 
   async function onLogout() {
     try {
@@ -55,12 +54,6 @@ export default function Navbar() {
               </span>
             )}
           </Link>
-
-          {lastAddedTitle && (
-            <span className="rounded-md bg-green-100 px-2 py-1 text-xs text-green-800">
-              Dodato: {lastAddedTitle}
-            </span>
-          )}
 
           {loading ? (
             <span className="text-sm text-gray-500">Učitavanje...</span>
