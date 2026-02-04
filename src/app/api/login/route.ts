@@ -25,6 +25,15 @@ export async function POST(req: Request) {
     );
   }
 
+  if (user.isBlocked) {
+    await prisma.session.deleteMany({ where: { userId: user.id } });
+
+    return NextResponse.json(
+      { ok: false, error: "Nalog je blokiran." },
+      { status: 403 }
+    );
+  }
+
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) {
     return NextResponse.json(
@@ -33,9 +42,8 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1) napravi token i upiši u Session tabelu
-  const token = randomBytes(32).toString("hex"); // 64 char
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 dana
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); 
 
   await prisma.session.create({
     data: {
@@ -45,7 +53,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // 2) vrati response + postavi cookie (token!)
   const res = NextResponse.json(
     {
       ok: true,
@@ -53,7 +60,7 @@ export async function POST(req: Request) {
         id: user.id,
         email: user.email,
         role: user.role,
-        isPremium: user.isPremium, 
+        isPremium: user.isPremium,
       },
     },
     { status: 200 }
@@ -69,3 +76,4 @@ export async function POST(req: Request) {
 
   return res;
 }
+

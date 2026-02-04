@@ -62,7 +62,7 @@ export default function RecipeDetailsPage() {
   const locked = recipe.isPremium && !isBought;
 
   const addRecipeToCart = () => {
-    if (locked) return; // ✅ premium logika ostaje
+    if (locked) return; 
 
     const priceRsd = recipe.isPremium ? Number((recipe as any).priceRsd ?? 0) : 0;
 
@@ -147,7 +147,7 @@ export default function RecipeDetailsPage() {
           <p className="mt-6 text-gray-700">{recipe.description}</p>
 
           <div className="mt-8 rounded-lg border bg-white p-4">
-            {/* ✅ Dugme je OVDE i zato ne može da se prikaže kad je premium zaključan */}
+            {/* Dugme je OVDE i zato ne može da se prikaže kad je premium zaključan */}
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-medium">Sastojci</h2>
 

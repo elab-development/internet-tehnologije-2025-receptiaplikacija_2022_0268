@@ -15,12 +15,14 @@ async function getCurrentUser() {
     where: { token },
     select: {
       expiresAt: true,
-      user: { select: { id: true, role: true, email: true, name: true } },
+      user: { select: { id: true, role: true, email: true, name: true, isBlocked: true } },
     },
   });
 
   if (!session) return null;
   if (session.expiresAt < new Date()) return null;
+
+  if (session.user.isBlocked) return null;
 
   return session.user;
 }
@@ -58,7 +60,6 @@ export async function GET(
   return NextResponse.json({ ok: true, reviews });
 }
 
-
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -75,7 +76,13 @@ export async function POST(
 
   if (user.role !== "KUPAC") {
     return NextResponse.json(
-      { ok: false, error: "Samo kupac može da ostavi recenziju." },
+      {
+        ok: false,
+        error:
+          user.role === "ADMIN"
+            ? "Administrator ne može da ostavi recenziju."
+            : "Samo kupac može da ostavi recenziju.",
+      },
       { status: 403 }
     );
   }
@@ -105,14 +112,16 @@ export async function POST(
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-
       const recipe = await tx.recipe.findUnique({
         where: { id: recipeId },
         select: { id: true },
       });
 
       if (!recipe) {
-        return { status: 404 as const, payload: { ok: false, error: "Recept nije pronađen." } };
+        return {
+          status: 404 as const,
+          payload: { ok: false, error: "Recept nije pronađen." },
+        };
       }
 
       await tx.review.upsert({

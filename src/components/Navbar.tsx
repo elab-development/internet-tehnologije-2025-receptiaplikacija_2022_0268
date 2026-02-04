@@ -59,6 +59,13 @@ export default function Navbar() {
             <span className="text-sm text-gray-500">Učitavanje...</span>
           ) : user ? (
             <>
+              {/* admin */}
+              {user.role === "ADMIN" && (
+                <Link href="/admin" className="hover:underline font-semibold text-red-600">
+                  Admin
+                </Link>
+              )}
+
               <Link href="/profile" className="hover:underline">
                 Profil
               </Link>
