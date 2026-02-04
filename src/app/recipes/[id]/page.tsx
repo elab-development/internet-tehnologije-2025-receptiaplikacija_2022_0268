@@ -180,7 +180,7 @@ export default function RecipeDetailsPage() {
             </ol>
           </div>
 
-          <ReviewsSection recipeId={id} />
+          <ReviewsSection recipeId={recipe.id} />
         </>
       )}
     </main>

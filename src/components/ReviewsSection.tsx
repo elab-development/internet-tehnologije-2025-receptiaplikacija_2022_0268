@@ -85,6 +85,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeId]);
 
   async function submit() {
@@ -92,7 +93,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
     setErr(null);
 
     if (!rating) {
-      setErr("Nedostaje ocena.");
+      setErr("Nedostaje ocena (klikni na zvezdice).");
       return;
     }
     if (rating < 1 || rating > 5) {
@@ -101,6 +102,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
     }
 
     setSaving(true);
+
     try {
       const res = await fetch(`/api/recipes/${recipeId}/reviews`, {
         method: "POST",
@@ -110,7 +112,6 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
 
       const text = await res.text();
 
-      // DEBUG (da vidimo tačno šta backend vraća)
       console.log("REVIEWS POST STATUS:", res.status);
       console.log("REVIEWS POST BODY:", text);
 
@@ -130,6 +131,8 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
       setRating(0);
       setComment("");
       await load();
+    } catch (e: any) {
+      setErr(e?.message ?? String(e) ?? "Network error");
     } finally {
       setSaving(false);
     }

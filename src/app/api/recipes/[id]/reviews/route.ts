@@ -1,111 +1,108 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
+import { PrismaClient } from "@prisma/client";
 
-const SESSION_COOKIE = "session";
+const prisma = new PrismaClient();
 
-async function getCurrentUserLite() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+// ✅ fallback bez auth-a:
+// 1) ako postoji kupac@test.com koristi njega
+// 2) inače uzmi najnovijeg korisnika (poslednje kreiranog)
+async function getCurrentUserFallback() {
+  const byEmail = await prisma.user.findUnique({
+    where: { email: "kupac@test.com" },
+    select: { id: true, name: true, email: true },
+  });
+  if (byEmail) return byEmail;
 
-  const session = await prisma.session.findUnique({
-    where: { token },
-    select: {
-      expiresAt: true,
-      user: { select: { id: true, role: true, isBlocked: true } },
-    },
+  const latest = await prisma.user.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, email: true },
   });
 
-  if (!session) return null;
-  if (session.expiresAt < new Date()) return null;
-  if (session.user.isBlocked) return null;
-
-  return session.user;
+  return latest;
 }
 
 export async function GET(
   _req: Request,
-  ctx: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id: recipeId } = await ctx.params;
+  try {
+    const { id } = await context.params; // ✅ Next 15
+    const recipeId = decodeURIComponent(id);
 
-  const recipe = await prisma.recipe.findUnique({
-    where: { id: recipeId },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      difficulty: true,
-      prepTimeMinutes: true,
-      imageUrl: true,
-      isPublished: true,
-      isPremium: true,
-      priceRSD: true,
-      avgRating: true,
-      reviewsCount: true,
-      createdAt: true,
-      author: { select: { id: true, name: true, email: true } },
-      category: { select: { id: true, name: true } },
-      ingredients: {
-        select: {
-          quantity: true,
-          unit: true,
-          ingredient: { select: { id: true, name: true } },
-        },
+    const reviews = await prisma.review.findMany({
+      where: { recipeId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
       },
-      steps: {
-        orderBy: { stepNumber: "asc" },
-        select: { id: true, stepNumber: true, text: true },
-      },
-    },
-  });
+    });
 
-  if (!recipe) {
+    return NextResponse.json({ reviews }, { status: 200 });
+  } catch (e) {
     return NextResponse.json(
-      { ok: false, error: "Recept nije pronađen." },
-      { status: 404 }
+      { error: "Server error", details: String(e) },
+      { status: 500 }
     );
   }
+}
 
-  
-  if (!recipe.isPremium) {
-    return NextResponse.json({ ok: true, locked: false, recipe });
-  }
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params; // ✅ Next 15
+    const recipeId = decodeURIComponent(id);
 
-  const user = await getCurrentUserLite();
-  if (!user) {
-    return NextResponse.json({
-      ok: true,
-      locked: true,
-      recipe: {
-        ...recipe,
-        description: "",
-        ingredients: [],
-        steps: [],
+    const body = await req.json().catch(() => null);
+    const rating = Number(body?.rating);
+    const comment =
+      typeof body?.comment === "string" && body.comment.trim().length > 0
+        ? body.comment.trim()
+        : null;
+
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return NextResponse.json({ error: "Ocena mora biti 1-5." }, { status: 400 });
+    }
+
+    const user = await getCurrentUserFallback();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Nema nijednog korisnika u bazi." },
+        { status: 401 }
+      );
+    }
+
+    // (opciono) proveri da recept postoji da ne praviš review za nepostojeći id
+    const recipeExists = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { id: true },
+    });
+    if (!recipeExists) {
+      return NextResponse.json({ error: "Recept ne postoji." }, { status: 404 });
+    }
+
+    const created = await prisma.review.create({
+      data: {
+        recipeId,
+        userId: user.id,
+        rating,
+        comment,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
       },
     });
+
+    return NextResponse.json(
+      { message: "Recenzija je uspešno ostavljena.", review: created },
+      { status: 201 }
+    );
+  } catch (e) {
+    console.error("REVIEWS POST ERROR:", e);
+    return NextResponse.json(
+      { error: "Server error", details: String(e) },
+      { status: 500 }
+    );
   }
-
-  const hasPurchase = await prisma.recipePurchase.findUnique({
-    where: { userId_recipeId: { userId: user.id, recipeId } },
-    select: { id: true },
-  });
-
-  if (!hasPurchase) {
-    return NextResponse.json({
-      ok: true,
-      locked: true,
-      recipe: {
-        ...recipe,
-        description: "",
-        ingredients: [],
-        steps: [],
-      },
-    });
-  }
-
-  return NextResponse.json({ ok: true, locked: false, recipe });
 }
