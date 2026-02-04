@@ -10,7 +10,6 @@ export type Recipe = {
   priceRsd?: number;
   ingredients: string[];
   steps: string[];
-
 };
 
 export const RECIPES: Recipe[] = [
@@ -29,8 +28,8 @@ export const RECIPES: Recipe[] = [
       "Ispržiti slaninu dok ne postane hrskava.",
       "Umutiti žumanca i parmezan.",
       "Pomešati pastu sa slaninom i skloniti sa vatre.",
-      "Dodati smesu od jaja i brzo promešatina tihoj vatri."
-    ]
+      "Dodati smesu od jaja i brzo promešatina tihoj vatri.",
+    ],
   },
   {
     id: "sarma",
@@ -46,8 +45,8 @@ export const RECIPES: Recipe[] = [
     steps: [
       "Umešati meso, pirinač i začine.",
       "Uviti smesu u listove kupusa.",
-      "Kuvati na tihoj vatri oko 3 sata."
-    ]
+      "Kuvati na tihoj vatri oko 3 sata.",
+    ],
   },
   {
     id: "gulas",
@@ -63,8 +62,8 @@ export const RECIPES: Recipe[] = [
       "Prodinstati luk dok ne omekša.",
       "Dodati meso i zapeći sa svih strana.",
       "Dodati začine i malo vode.",
-      "Krčkati 1.5–2h uz povremeno dolivanje vode."
-    ]
+      "Krčkati 1.5–2h uz povremeno dolivanje vode.",
+    ],
   },
   {
     id: "pasulj-prebranac",
@@ -81,8 +80,8 @@ export const RECIPES: Recipe[] = [
       "Skuvati pasulj (ili koristiti već kuvani).",
       "Prodinstati luk, dodati alevu papriku.",
       "Pomešati pasulj i luk, prebaciti u pleh.",
-      "Zapeći 30–40 min na 200°C."
-    ]
+      "Zapeći 30–40 min na 200°C.",
+    ],
   },
   {
     id: "pileca-salata",
@@ -94,7 +93,7 @@ export const RECIPES: Recipe[] = [
     category: "proteinsko",
     isPremium: false,
     ingredients: ["200g pilećeg filea", "Zelena salata", "Paradajz", "Maslinovo ulje"],
-    steps: ["Ispeći piletinu na tiganju.", "Iseckati povrće.", "Sve sjediniti i dodati dresing."]
+    steps: ["Ispeći piletinu na tiganju.", "Iseckati povrće.", "Sve sjediniti i dodati dresing."],
   },
   {
     id: "losos-sa-povrcem",
@@ -107,7 +106,7 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 349,
     ingredients: ["File lososa", "Tikvice", "Paprika", "Maslinovo ulje", "So, biber"],
-    steps: ["Začiniti lososa.", "Ispeći u rerni 20 minuta.", "Ispeći povrće i poslužiti zajedno."]
+    steps: ["Začiniti lososa.", "Ispeći u rerni 20 minuta.", "Ispeći povrće i poslužiti zajedno."],
   },
   {
     id: "jaja-avokado-toast",
@@ -119,7 +118,7 @@ export const RECIPES: Recipe[] = [
     category: "proteinsko",
     isPremium: false,
     ingredients: ["2 jaja", "1 avokado", "Integralni hleb", "So, biber"],
-    steps: ["Ispeći jaja.", "Izgnječiti avokado.", "Sve staviti na tost i začiniti."]
+    steps: ["Ispeći jaja.", "Izgnječiti avokado.", "Sve staviti na tost i začiniti."],
   },
   {
     id: "wrap-od-tunjevine",
@@ -132,11 +131,7 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 199,
     ingredients: ["1 konzerva tunjevine", "2 kašike grčkog jogurta", "Tortilja", "Zelena salata", "Krastavac", "So, biber"],
-    steps: [
-      "Pomešati tunjevinu i grčki jogurt, začiniti.",
-      "Dodati salatu i povrće na tortilju.",
-      "Urolati i preseći."
-    ]
+    steps: ["Pomešati tunjevinu i grčki jogurt, začiniti.", "Dodati salatu i povrće na tortilju.", "Urolati i preseći."],
   },
   {
     id: "piletina-teriyaki",
@@ -148,12 +143,7 @@ export const RECIPES: Recipe[] = [
     category: "proteinsko",
     isPremium: false,
     ingredients: ["Pileći file", "Soja sos", "Med (ili šećer)", "Đumbir", "Beli luk", "Susam (opciono)"],
-    steps: [
-      "Iseći piletinu na trakice.",
-      "Zapeći piletinu na tiganju.",
-      "Dodati soja sos + malo meda + đumbir + beli luk.",
-      "Krčkati 3–5 min dok se sos ne zgusne."
-    ]
+    steps: ["Iseći piletinu na trakice.", "Zapeći piletinu na tiganju.", "Dodati soja sos + malo meda + đumbir + beli luk.", "Krčkati 3–5 min dok se sos ne zgusne."],
   },
   {
     id: "tofu-bowl",
@@ -165,7 +155,7 @@ export const RECIPES: Recipe[] = [
     category: "vegan",
     isPremium: false,
     ingredients: ["Tofu", "Pirinač", "Brokoli", "Soja sos"],
-    steps: ["Ispržiti tofu.", "Skuvati pirinač.", "Sjediniti sve sastojke."]
+    steps: ["Ispržiti tofu.", "Skuvati pirinač.", "Sjediniti sve sastojke."],
   },
   {
     id: "veganska-pasta-pesto",
@@ -178,7 +168,7 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 229,
     ingredients: ["Pasta", "Bosiljak", "Beli luk", "Maslinovo ulje", "Indijski orah"],
-    steps: ["Skuvati pastu.", "Izblendati pesto.", "Pomešati pastu sa pestom."]
+    steps: ["Skuvati pastu.", "Izblendati pesto.", "Pomešati pastu sa pestom."],
   },
   {
     id: "leblebije-curry",
@@ -190,7 +180,7 @@ export const RECIPES: Recipe[] = [
     category: "vegan",
     isPremium: false,
     ingredients: ["Leblebije", "Kokosovo mleko", "Curry začin", "Crni luk"],
-    steps: ["Prodinstati luk.", "Dodati leblebije i začine.", "Dodati kokosovo mleko i kuvati."]
+    steps: ["Prodinstati luk.", "Dodati leblebije i začine.", "Dodati kokosovo mleko i kuvati."],
   },
   {
     id: "veganski-burger",
@@ -203,7 +193,7 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 279,
     ingredients: ["Crni pasulj", "Ovsene pahuljice", "Crni luk", "Začini"],
-    steps: ["Izgnječiti pasulj.", "Dodati ostale sastojke.", "Formirati pljeskavice i ispeći."]
+    steps: ["Izgnječiti pasulj.", "Dodati ostale sastojke.", "Formirati pljeskavice i ispeći."],
   },
   {
     id: "humus-sendvic",
@@ -215,7 +205,7 @@ export const RECIPES: Recipe[] = [
     category: "vegan",
     isPremium: false,
     ingredients: ["Humus", "Integralni hleb ili tortilja", "Krastavac", "Paradajz", "Zelena salata", "So, biber"],
-    steps: ["Namazati humus na hleb/tortilju.", "Dodati povrće.", "Preklopiti i poslužiti."]
+    steps: ["Namazati humus na hleb/tortilju.", "Dodati povrće.", "Preklopiti i poslužiti."],
   },
   {
     id: "salata-kinoa",
@@ -228,7 +218,7 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 219,
     ingredients: ["Kinoa", "Paradajz", "Krastavac", "Limun", "Maslinovo ulje", "So, biber"],
-    steps: ["Skuvati kino u slanoj vodi i ohladiti.", "Iseckati povrće.", "Pomešati i dodati limun + ulje."]
+    steps: ["Skuvati kino u slanoj vodi i ohladiti.", "Iseckati povrće.", "Pomešati i dodati limun + ulje."],
   },
   {
     id: "krem-corba-bundeva",
@@ -240,10 +230,10 @@ export const RECIPES: Recipe[] = [
     category: "vegan",
     isPremium: false,
     ingredients: ["Bundeva", "Šargarepa", "Crni luk", "So, biber", "Maslinovo ulje"],
-    steps: ["Prodinstati luk.", "Dodati bundevu i šargarepu, naliti vodom.", "Kuvati 20–25 min.", "Izblendati i začiniti."]
+    steps: ["Prodinstati luk.", "Dodati bundevu i šargarepu, naliti vodom.", "Kuvati 20–25 min.", "Izblendati i začiniti."],
   },
   {
-    id: "pečeni-krompir-i-paprika",
+    id: "peceni-krompir-i-paprika",
     title: "Pečeni krompir i paprika",
     short: "Rerna obrok: krompir + paprika + začini, bez muke.",
     description: "Jednostavan veganski obrok iz rerne.",
@@ -253,6 +243,6 @@ export const RECIPES: Recipe[] = [
     isPremium: true,
     priceRsd: 189,
     ingredients: ["Krompir", "Paprika", "Maslinovo ulje", "So, biber", "Aleva paprika"],
-    steps: ["Iseći krompir i papriku.", "Začiniti i dodati malo ulja.", "Peći 35–40 min na 200°C."]
-  }
+    steps: ["Iseći krompir i papriku.", "Začiniti i dodati malo ulja.", "Peći 35–40 min na 200°C."],
+  },
 ];

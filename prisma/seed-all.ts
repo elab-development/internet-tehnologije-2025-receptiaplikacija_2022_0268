@@ -5,7 +5,6 @@ import { RECIPES } from "../src/lib/recipes";
 
 const prisma = new PrismaClient();
 
-
 function norm(s: string) {
   return (s ?? "")
     .toLowerCase()
@@ -132,8 +131,6 @@ async function getOrCreateIngredientId(name: string) {
   return created.id;
 }
 
-
-
 async function seedUsers() {
   const passwordHash = await bcrypt.hash("123456", 10);
 
@@ -153,7 +150,6 @@ async function seedUsers() {
 
   console.log("✅ Seeded users");
 }
-
 
 const INGREDIENT_GROUPS: Record<string, string[]> = {
   "Mlečni proizvodi i jaja": [
@@ -298,9 +294,6 @@ const INGREDIENT_META: Record<string, Meta> = {
 
   tuna: { unit: "g", qty: 200, priceRsd: 240 },
   losos: { unit: "g", qty: 300, priceRsd: 900 },
-  "oslić": { unit: "g", qty: 500, priceRsd: 420 },
-  "škampi": { unit: "g", qty: 300, priceRsd: 780 },
-  lignje: { unit: "g", qty: 400, priceRsd: 650 },
 
   krompir: { unit: "g", qty: 1000, priceRsd: 140 },
   luk: { unit: "g", qty: 1000, priceRsd: 160 },
@@ -308,7 +301,6 @@ const INGREDIENT_META: Record<string, Meta> = {
   "šargarepa": { unit: "g", qty: 1000, priceRsd: 170 },
   paradajz: { unit: "g", qty: 1000, priceRsd: 260 },
   paprika: { unit: "g", qty: 500, priceRsd: 220 },
-  "paprika začinska": { unit: "g", qty: 100, priceRsd: 120 },
   krastavac: { unit: "kom", qty: 1, priceRsd: 80 },
   tikvica: { unit: "kom", qty: 1, priceRsd: 90 },
   brokoli: { unit: "kom", qty: 1, priceRsd: 220 },
@@ -322,71 +314,30 @@ const INGREDIENT_META: Record<string, Meta> = {
   đumbir: { unit: "g", qty: 100, priceRsd: 120 },
   "kiseli kupus": { unit: "g", qty: 1000, priceRsd: 220 },
 
-  jabuka: { unit: "kom", qty: 1, priceRsd: 35 },
-  banana: { unit: "kom", qty: 1, priceRsd: 45 },
-  "kruška": { unit: "kom", qty: 1, priceRsd: 50 },
-  limun: { unit: "kom", qty: 1, priceRsd: 60 },
-  narandža: { unit: "kom", qty: 1, priceRsd: 55 },
-  mandarina: { unit: "kom", qty: 1, priceRsd: 30 },
-  jagoda: { unit: "g", qty: 500, priceRsd: 450 },
-  malina: { unit: "g", qty: 250, priceRsd: 420 },
-  borovnica: { unit: "g", qty: 250, priceRsd: 480 },
-  grožđe: { unit: "g", qty: 500, priceRsd: 260 },
-  kajsija: { unit: "g", qty: 500, priceRsd: 300 },
-
   brašno: { unit: "g", qty: 1000, priceRsd: 120 },
   pirinač: { unit: "g", qty: 1000, priceRsd: 260 },
   testenina: { unit: "g", qty: 500, priceRsd: 140 },
-  "špagete": { unit: "g", qty: 500, priceRsd: 150 },
-  makarone: { unit: "g", qty: 500, priceRsd: 150 },
-  "kus-kus": { unit: "g", qty: 500, priceRsd: 220 },
-  "ovsene pahuljice": { unit: "g", qty: 500, priceRsd: 220 },
   hleb: { unit: "kom", qty: 1, priceRsd: 90 },
   "integralni hleb": { unit: "kom", qty: 1, priceRsd: 120 },
-  prezle: { unit: "g", qty: 200, priceRsd: 80 },
   tortilja: { unit: "kom", qty: 6, priceRsd: 220 },
-  kinoa: { unit: "g", qty: 500, priceRsd: 450 },
 
   pasulj: { unit: "g", qty: 500, priceRsd: 180 },
   leblebije: { unit: "g", qty: 500, priceRsd: 220 },
   tofu: { unit: "g", qty: 200, priceRsd: 220 },
-  "indijski orah": { unit: "g", qty: 200, priceRsd: 420 },
-  susam: { unit: "g", qty: 100, priceRsd: 160 },
 
   so: { unit: "g", qty: 1000, priceRsd: 80 },
   biber: { unit: "g", qty: 50, priceRsd: 140 },
-  origano: { unit: "g", qty: 20, priceRsd: 90 },
-  bosiljak: { unit: "g", qty: 20, priceRsd: 90 },
-  peršun: { unit: "g", qty: 20, priceRsd: 60 },
-  "lovorov list": { unit: "g", qty: 20, priceRsd: 70 },
-  "čili": { unit: "g", qty: 20, priceRsd: 90 },
-  cimet: { unit: "g", qty: 30, priceRsd: 110 },
-  "muškatni oraščić": { unit: "g", qty: 20, priceRsd: 160 },
-  "soda bikarbona": { unit: "g", qty: 200, priceRsd: 80 },
-  kari: { unit: "g", qty: 50, priceRsd: 160 },
-  začini: { unit: "g", qty: 50, priceRsd: 120 },
 
   "maslinovo ulje": { unit: "ml", qty: 1000, priceRsd: 1200 },
   "suncokretovo ulje": { unit: "ml", qty: 1000, priceRsd: 260 },
-  sirće: { unit: "ml", qty: 1000, priceRsd: 150 },
-  balzamiko: { unit: "ml", qty: 250, priceRsd: 350 },
-  senf: { unit: "g", qty: 200, priceRsd: 160 },
-  "kečap": { unit: "g", qty: 500, priceRsd: 220 },
-  majonez: { unit: "g", qty: 500, priceRsd: 260 },
-  "paradajz sos": { unit: "ml", qty: 500, priceRsd: 180 },
   "soja sos": { unit: "ml", qty: 250, priceRsd: 250 },
   humus: { unit: "g", qty: 200, priceRsd: 220 },
 
   "šećer": { unit: "g", qty: 1000, priceRsd: 140 },
-  "vanilin šećer": { unit: "g", qty: 10, priceRsd: 25 },
   med: { unit: "g", qty: 300, priceRsd: 420 },
-  kakao: { unit: "g", qty: 100, priceRsd: 190 },
-  čokolada: { unit: "g", qty: 100, priceRsd: 160 },
-  "prašak za pecivo": { unit: "g", qty: 12, priceRsd: 25 },
 };
 
 async function seedIngredientsWithMeta() {
- 
   const categoryNameToId = new Map<string, string>();
   for (const categoryName of Object.keys(INGREDIENT_GROUPS)) {
     const cat = await prisma.categoryIngredient.upsert({
@@ -397,8 +348,6 @@ async function seedIngredientsWithMeta() {
     categoryNameToId.set(categoryName, cat.id);
   }
 
-
-  let upserted = 0;
   for (const [categoryName, items] of Object.entries(INGREDIENT_GROUPS)) {
     const categoryId = categoryNameToId.get(categoryName)!;
 
@@ -422,177 +371,11 @@ async function seedIngredientsWithMeta() {
           priceRsd: meta?.priceRsd ?? null,
         },
       });
-
-      upserted++;
     }
   }
 
-  const all = await prisma.ingredient.findMany({
-    select: { id: true, name: true, priceRsd: true, defaultQty: true, defaultUnit: true, categoryId: true },
-  });
-
-  
-  function scoreForPrimary(row: {
-    id: string;
-    name: string;
-    priceRsd: number | null;
-    defaultQty: number | null;
-    defaultUnit: string | null;
-    categoryId: string | null;
-  }) {
-    const canonical = cleanupNamePart(row.name);
-    let score = 0;
-
-    if (row.name.trim().toLowerCase() === canonical) score += 100; // exact canonical
-    if (row.priceRsd != null) score += 10;
-    if (row.defaultQty != null) score += 10;
-    if (row.defaultUnit != null) score += 10;
-    if (row.categoryId != null) score += 5;
-
-    return score;
-  }
-
-  const canonicalToPrimary = new Map<string, { id: string; score: number }>();
-  const duplicates: { canonical: string; dupId: string; primaryId: string }[] = [];
-
-  for (const ing of all) {
-    const canonical = cleanupNamePart(ing.name);
-    const score = scoreForPrimary(ing);
-
-    const current = canonicalToPrimary.get(canonical);
-    if (!current) {
-      canonicalToPrimary.set(canonical, { id: ing.id, score });
-      continue;
-    }
-
-  
-    if (score > current.score) {
-      duplicates.push({ canonical, dupId: current.id, primaryId: ing.id });
-      canonicalToPrimary.set(canonical, { id: ing.id, score });
-    } else {
-      duplicates.push({ canonical, dupId: ing.id, primaryId: current.id });
-    }
-  }
-
- 
-  let merged = 0;
-  for (const d of duplicates) {
-    if (d.dupId === d.primaryId) continue;
-
-    await prisma.recipeIngredient.updateMany({
-      where: { ingredientId: d.dupId },
-      data: { ingredientId: d.primaryId },
-    });
-
-    await prisma.ingredient.deleteMany({
-      where: { id: d.dupId },
-    });
-
-    merged++;
-  }
-
- 
-  const after = await prisma.ingredient.findMany({
-    select: { id: true, name: true, priceRsd: true, defaultQty: true, defaultUnit: true, categoryId: true },
-  });
-
-  let patched = 0;
-  for (const ing of after) {
-    const canonical = cleanupNamePart(ing.name);
-    const meta = INGREDIENT_META[canonical];
-    if (!meta) continue;
-
-    const needs = ing.priceRsd == null || ing.defaultQty == null || ing.defaultUnit == null || ing.categoryId == null;
-    if (!needs) continue;
-
-    let categoryId: string | null = ing.categoryId ?? null;
-    if (!categoryId) {
-      for (const [catName, arr] of Object.entries(INGREDIENT_GROUPS)) {
-        if (arr.some((x) => cleanupNamePart(x) === canonical)) {
-          categoryId = categoryNameToId.get(catName) ?? null;
-          break;
-        }
-      }
-    }
-
-    await prisma.ingredient.update({
-      where: { id: ing.id },
-      data: {
-        categoryId: categoryId ?? ing.categoryId ?? null,
-        defaultUnit: ing.defaultUnit ?? meta.unit ?? null,
-        defaultQty: ing.defaultQty ?? meta.qty ?? null,
-        priceRsd: ing.priceRsd ?? meta.priceRsd ?? null,
-      },
-    });
-
-    patched++;
-  }
-
- 
-  const pasuljCategoryName = "Mahune / proteinsko biljno";
-  const pasuljCategoryId = categoryNameToId.get(pasuljCategoryName) ?? null;
-
-
-  const pasulj = await prisma.ingredient.upsert({
-    where: { name: "pasulj" },
-    update: {
-      categoryId: pasuljCategoryId,
-      defaultUnit: "g",
-      defaultQty: 500,
-      priceRsd: 180,
-    },
-    create: {
-      name: "pasulj",
-      categoryId: pasuljCategoryId,
-      defaultUnit: "g",
-      defaultQty: 500,
-      priceRsd: 180,
-    },
-    select: { id: true },
-  });
-
-
-  const pasuljLike = await prisma.ingredient.findMany({
-    select: { id: true, name: true },
-  });
-
-  const toDelete: string[] = [];
-  for (const row of pasuljLike) {
-    if (row.id === pasulj.id) continue;
-    const c = cleanupNamePart(row.name);
-    if (c === "pasulj") toDelete.push(row.id);
-  }
-
-  if (toDelete.length > 0) {
-    await prisma.recipeIngredient.updateMany({
-      where: { ingredientId: { in: toDelete } },
-      data: { ingredientId: pasulj.id },
-    });
-
-    await prisma.ingredient.deleteMany({
-      where: { id: { in: toDelete } },
-    });
-  }
-
-
-  await prisma.ingredient.update({
-    where: { id: pasulj.id },
-    data: {
-      categoryId: pasuljCategoryId,
-      defaultUnit: "g",
-      defaultQty: 500,
-      priceRsd: 180,
-    },
-  });
-
-  console.log("✅ Upserted ingredient categories:", Object.keys(INGREDIENT_GROUPS).length);
-  console.log("✅ Upserted ingredients (from groups):", upserted);
-  console.log("✅ Merged duplicate ingredients:", merged);
-  console.log("✅ Patched existing ingredients with meta:", patched);
-  console.log("✅ HARD FIX applied for: pasulj");
+  console.log("✅ Seeded ingredients");
 }
-
-
 
 const DIFF_MAP: Record<string, number> = { Lako: 1, Srednje: 2, Teško: 3 };
 
@@ -648,13 +431,18 @@ async function seedRecipes() {
   const RECIPES_ANY = RECIPES as any[];
   let created = 0;
 
-  const skipped = new Set<string>();
-
   for (const r of RECIPES_ANY) {
     const categoryKey = String(r.category ?? "tradicionalno");
     const categoryId = catIds[categoryKey] ?? catIds["tradicionalno"];
     const difficulty =
       typeof r.difficulty === "number" ? r.difficulty : (DIFF_MAP[String(r.difficulty)] ?? 1);
+
+    const isPremium = Boolean(r.isPremium);
+
+    const priceFromLib =
+      Number((r as any).priceRsd ?? (r as any).priceRSD ?? (r as any).price ?? 0) || 0;
+
+    const priceRSD = isPremium ? (priceFromLib > 0 ? priceFromLib : 300) : 0;
 
     const recipe = await prisma.recipe.create({
       data: {
@@ -665,10 +453,10 @@ async function seedRecipes() {
         prepTimeMinutes: Number(r.timeMin ?? 10),
         imageUrl: r.imageUrl ?? null,
         isPublished: true,
-        isPremium: Boolean(r.isPremium),
+        isPremium,
+        priceRSD,
         authorId: chef.id,
         categoryId,
-
         avgRating: 0,
         reviewsCount: 0,
       },
@@ -678,15 +466,9 @@ async function seedRecipes() {
     const ingLines = (r.ingredients ?? []) as any[];
     for (const line of ingLines) {
       const parsed = parseIngredientLine(String(line ?? ""));
-
       for (const p of parsed) {
         const canonical = cleanupNamePart(p.name);
         if (!canonical) continue;
-
-        const inGroups = Object.values(INGREDIENT_GROUPS).some((arr) =>
-          arr.some((x) => cleanupNamePart(x) === canonical)
-        );
-        if (!inGroups) skipped.add(canonical);
 
         const ingredientId = await getOrCreateIngredientId(canonical);
         if (!ingredientId) continue;
@@ -719,12 +501,8 @@ async function seedRecipes() {
     created++;
   }
 
-  console.log(` Ubaceno recepata: ${created}`);
-
-
+  console.log(`Ubaceno recepata: ${created}`);
 }
-
-
 
 async function main() {
   await seedUsers();
