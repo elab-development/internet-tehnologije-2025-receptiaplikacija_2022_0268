@@ -535,20 +535,25 @@ const oldIds = old.map((x) => x.id);
         ? r.difficulty
         : (DIFF_MAP[String(r.difficulty)] ?? 1);
 
-    const recipe = await prisma.recipe.create({
-      data: {
-        title: String(r.title ?? ""),
-        description: String(r.description ?? r.short ?? ""),
-        difficulty,
-        prepTimeMinutes: Number(r.timeMin ?? 10),
-        imageUrl: r.imageUrl ?? null,
-        isPublished: true,
-        isPremium: Boolean(r.isPremium),
-        authorId: chef.id,
-        categoryId,
-      },
-      select: { id: true },
-    });
+   const recipe = await prisma.recipe.create({
+  data: {
+    id: String(r.id),
+    title: String(r.title ?? ""),
+    description: String(r.description ?? r.short ?? ""),
+    difficulty,
+    prepTimeMinutes: Number(r.timeMin ?? 10),
+    imageUrl: r.imageUrl ?? null,
+    isPublished: true,
+    isPremium: Boolean(r.isPremium),
+    authorId: chef.id,
+    categoryId,
+
+    avgRating: 0,
+    reviewsCount: 0,
+  },
+  select: { id: true },
+});
+
 
     
     const ingLines = (r.ingredients ?? []) as any[];

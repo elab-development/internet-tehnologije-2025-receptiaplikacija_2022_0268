@@ -65,6 +65,7 @@ model Ingredient {
   recipes  RecipeIngredient[]
 }
 
+
 model Recipe {
   id              String             @id @default(cuid())
   title           String
@@ -79,6 +80,8 @@ model Recipe {
   updatedAt       DateTime           @updatedAt
   isPremium       Boolean            @default(false)
   priceRSD        Int                @default(0)
+  avgRating       Float              @default(0)
+  reviewsCount    Int                @default(0)
   favorites       Favorite[]
   author          User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category        CategoryRecipe     @relation(fields: [categoryId], references: [id])
@@ -91,6 +94,7 @@ model Recipe {
   @@index([categoryId])
   @@index([isPublished])
 }
+
 
 model RecipeIngredient {
   recipeId     String

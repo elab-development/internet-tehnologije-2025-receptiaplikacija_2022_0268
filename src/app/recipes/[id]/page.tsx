@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RECIPES } from "@/lib/recipes";
 import { useCart } from "@/context/CartContext";
+import ReviewsSection from "@/components/ReviewsSection";
+
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
@@ -75,7 +77,10 @@ export default function RecipeDetailsPage() {
       },
       1
     );
+    console.log("ReviewsSection typeof:", typeof ReviewsSection, ReviewsSection);
+
   };
+
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -136,6 +141,11 @@ export default function RecipeDetailsPage() {
           >
             Kupi premium recept ({Number((recipe as any).priceRsd ?? 0)} RSD)
           </button>
+
+          {/*  */}
+          <div className="mt-6 text-sm text-gray-600">
+            Recenzije su dostupne nakon kupovine premium sadržaja.
+          </div>
         </div>
       ) : (
         <>
@@ -158,6 +168,9 @@ export default function RecipeDetailsPage() {
               ))}
             </ol>
           </div>
+
+          {/* prikaz recenzija */}
+         <ReviewsSection recipeId={id} />
         </>
       )}
     </main>
