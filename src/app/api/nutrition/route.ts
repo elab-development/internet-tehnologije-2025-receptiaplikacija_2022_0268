@@ -1,61 +1,73 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const recipeId = params.id;
+type Nutrition = {
+  productName: string;
+  source: string;
+  kcal_100g: number | null;
+  protein_100g: number | null;
+  fat_100g: number | null;
+  carbs_100g: number | null;
+};
 
-  const reviews = await prisma.review.findMany({
-    where: { recipeId },
-    include: {
-      user: {
-        select: { id: true, name: true, email: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json({ reviews });
+function numOrNull(v: unknown): number | null {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const recipeId = params.id;
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const q = searchParams.get("q")?.trim();
 
-  const body = await req.json();
-  const { rating, comment } = body;
+    if (!q) {
+      return NextResponse.json({ found: false, error: "Unesi q." }, { status: 400 });
+    }
 
-  if (!rating || rating < 1 || rating > 5) {
+   
+    const url =
+      "https://world.openfoodfacts.org/cgi/search.pl" +
+      `?search_terms=${encodeURIComponent(q)}` +
+      "&search_simple=1" +
+      "&action=process" +
+      "&json=1" +
+      "&page_size=1";
+
+    const r = await fetch(url, {
+     
+      headers: { "User-Agent": "recepti-aplikacija/1.0" },
+      cache: "no-store",
+    });
+
+    if (!r.ok) {
+      return NextResponse.json(
+        { found: false, error: `OpenFoodFacts error: ${r.status}` },
+        { status: 502 }
+      );
+    }
+
+    const raw = await r.json();
+    const product = raw?.products?.[0];
+
+    if (!product) {
+      return NextResponse.json({ found: false }, { status: 200 });
+    }
+
+    const nutr = product.nutriments ?? {};
+
+    const nutrition: Nutrition = {
+      productName: product.product_name ?? product.generic_name ?? q,
+      source: "OpenFoodFacts",
+      kcal_100g: numOrNull(nutr["energy-kcal_100g"] ?? nutr["energy-kcal"]),
+      protein_100g: numOrNull(nutr["proteins_100g"] ?? nutr["proteins"]),
+      fat_100g: numOrNull(nutr["fat_100g"] ?? nutr["fat"]),
+      carbs_100g: numOrNull(nutr["carbohydrates_100g"] ?? nutr["carbohydrates"]),
+    };
+
+    return NextResponse.json({ found: true, nutrition });
+  } catch (e: any) {
     return NextResponse.json(
-      { error: "Ocena mora biti između 1 i 5." },
-      { status: 400 }
+      { found: false, error: e?.message ?? "Server error" },
+      { status: 500 }
     );
   }
-
-  // ⚠️ TEMP korisnik (pošto nemamo auth sistem)
-  const user = await prisma.user.findFirst();
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "Ne postoji korisnik." },
-      { status: 400 }
-    );
-  }
-
-  await prisma.review.create({
-    data: {
-      rating,
-      comment,
-      recipeId,
-      userId: user.id,
-    },
-  });
-
-  return NextResponse.json({
-    message: "Recenzija uspešno sačuvana.",
-  });
 }

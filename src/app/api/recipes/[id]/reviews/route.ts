@@ -1,24 +1,24 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
-const prisma = new PrismaClient();
+async function getCurrentUserIdFromSession() {
+  const store = await cookies();
+  const token = store.get("session")?.value;
 
-// ✅ fallback bez auth-a:
-// 1) ako postoji kupac@test.com koristi njega
-// 2) inače uzmi najnovijeg korisnika (poslednje kreiranog)
-async function getCurrentUserFallback() {
-  const byEmail = await prisma.user.findUnique({
-    where: { email: "kupac@test.com" },
-    select: { id: true, name: true, email: true },
-  });
-  if (byEmail) return byEmail;
+  if (!token) return null;
 
-  const latest = await prisma.user.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, email: true },
+  const session = await prisma.session.findUnique({
+    where: { token },
+    select: { userId: true, expiresAt: true },
   });
 
-  return latest;
+  if (!session) return null;
+  if (session.expiresAt < new Date()) return null;
+
+  return session.userId;
 }
 
 export async function GET(
@@ -26,7 +26,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ✅ Next 15
+    const { id } = await context.params; 
     const recipeId = decodeURIComponent(id);
 
     const reviews = await prisma.review.findMany({
@@ -51,7 +51,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ✅ Next 15
+    const { id } = await context.params; // Next 15
     const recipeId = decodeURIComponent(id);
 
     const body = await req.json().catch(() => null);
@@ -62,18 +62,22 @@ export async function POST(
         : null;
 
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: "Ocena mora biti 1-5." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Ocena mora biti 1-5." },
+        { status: 400 }
+      );
     }
 
-    const user = await getCurrentUserFallback();
-    if (!user) {
+   
+    const userId = await getCurrentUserIdFromSession();
+    if (!userId) {
       return NextResponse.json(
-        { error: "Nema nijednog korisnika u bazi." },
+        { error: "Niste prijavljeni ili je sesija istekla." },
         { status: 401 }
       );
     }
 
-    // (opciono) proveri da recept postoji da ne praviš review za nepostojeći id
+   
     const recipeExists = await prisma.recipe.findUnique({
       where: { id: recipeId },
       select: { id: true },
@@ -82,10 +86,22 @@ export async function POST(
       return NextResponse.json({ error: "Recept ne postoji." }, { status: 404 });
     }
 
+   
+    const already = await prisma.review.findUnique({
+      where: { userId_recipeId: { userId, recipeId } },
+      select: { id: true },
+    });
+    if (already) {
+      return NextResponse.json(
+        { error: "Već si ostavio recenziju za ovaj recept." },
+        { status: 400 }
+      );
+    }
+
     const created = await prisma.review.create({
       data: {
         recipeId,
-        userId: user.id,
+        userId,
         rating,
         comment,
       },
@@ -98,7 +114,15 @@ export async function POST(
       { message: "Recenzija je uspešno ostavljena.", review: created },
       { status: 201 }
     );
-  } catch (e) {
+  } catch (e: any) {
+  
+    if (String(e?.message || "").includes("Unique constraint")) {
+      return NextResponse.json(
+        { error: "Već si ostavio recenziju za ovaj recept." },
+        { status: 400 }
+      );
+    }
+
     console.error("REVIEWS POST ERROR:", e);
     return NextResponse.json(
       { error: "Server error", details: String(e) },

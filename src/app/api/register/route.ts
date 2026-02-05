@@ -84,7 +84,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("REGISTER ERROR:", err);
 
-    // Prisma poznate greške (npr. unique constraint)
+  
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {
         return NextResponse.json(
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // sve ostalo
+ 
     return NextResponse.json(
       { ok: false, error: "Server error.", message: err?.message },
       { status: 500 }

@@ -85,7 +85,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [recipeId]);
 
   async function submit() {
