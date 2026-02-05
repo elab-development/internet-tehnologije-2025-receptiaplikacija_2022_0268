@@ -103,21 +103,25 @@ export default function RecipeDetailsPage() {
           </span>
         )}
 
-        {recipe.isPremium && isBought && <span>✅ Kupljeno</span>}
 
-        <button
-          onClick={addRecipeToCart}
-          disabled={locked}
-          className={`rounded-md border px-3 py-2 text-sm ${
-            locked ? "cursor-not-allowed opacity-50" : "hover:bg-gray-50"
-          }`}
-        >
-          Dodaj u korpu
-        </button>
+        {recipe.isPremium && (
+          <button
+            onClick={addRecipeToCart}
+            disabled={locked}
+            className={`rounded-md border px-3 py-2 text-sm ${locked ? "cursor-not-allowed opacity-50" : "hover:bg-gray-50"
+              }`}
+          >
+            Dodaj u korpu
+          </button>
+        )}
 
-        <Link href="/cart" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-          Korpa →
-        </Link>
+
+        {recipe.isPremium && (
+          <Link href="/cart" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+            Korpa →
+          </Link>
+        )}
+
       </div>
 
       <div className="mt-6 rounded-lg border bg-white p-4">
@@ -151,12 +155,15 @@ export default function RecipeDetailsPage() {
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-medium">Sastojci</h2>
 
-              <Link
-                href="/sastojci"
-                className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-              >
-                Kupi sastojke
-              </Link>
+              {!locked && (
+                <Link
+                  href="/sastojci"
+                  className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+                >
+                  Kupi sastojke
+                </Link>
+              )}
+
             </div>
 
             <ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700">
@@ -165,9 +172,9 @@ export default function RecipeDetailsPage() {
               ))}
             </ul>
 
-<div className="mt-4">
-    <NutritionSearch />
-  </div>
+            <div className="mt-4">
+              <NutritionSearch />
+            </div>
 
           </div>
 
