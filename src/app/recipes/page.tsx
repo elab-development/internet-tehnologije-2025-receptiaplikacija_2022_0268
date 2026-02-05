@@ -82,24 +82,29 @@ export default function RecipesPage() {
   }, [recipes, q, category]);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <main className="mx-auto max-w-6xl px-4 py-10">
+      {}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">Recepti</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">Recepti</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Pronađi ideju za ručak, večeru ili nešto slatko.
+          </p>
         </div>
 
+        {}
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Pretraga (npr. pasta, piletina...)"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 sm:w-72"
+            className="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300 sm:w-80"
           />
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 sm:w-52"
+            className="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300 sm:w-56"
           >
             {categories.map((c) => (
               <option key={c} value={c}>
@@ -110,34 +115,53 @@ export default function RecipesPage() {
         </div>
       </div>
 
+      {}
       {err && (
-        <div className="mt-6 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {err}
         </div>
       )}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {}
+      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r) => {
           const isFav = favorites.includes(r.id);
           const catName = String(r.category?.name ?? "Ostalo");
 
           return (
-            <div key={r.id} className="rounded-lg border bg-white p-4 transition hover:shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="min-w-0 flex-1">
-                  <h2 className="text-lg font-semibold leading-snug">{r.title}</h2>
-                </Link>
-
-                <div className="flex items-center gap-2">
-                  {r.isPremium && (
-                    <span className="shrink-0 rounded-full border px-2 py-1 text-xs">
-                      ⭐ PREMIUM • {Number(r.priceRSD ?? 0)} RSD
-                    </span>
+            <div
+              key={r.id}
+              className="group overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+            >
+              {}
+              <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="block">
+                <div className="relative h-48 w-full bg-gradient-to-br from-amber-100 to-rose-100">
+                  {r.imageUrl ? (
+                    <img
+                      src={r.imageUrl}
+                      alt={r.title}
+                      className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-4xl">
+                      🍲
+                    </div>
                   )}
 
+                  {}
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
+
+                  {}
+                  {r.isPremium && (
+                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-amber-900 shadow">
+                      ⭐ Premium • {Number(r.priceRSD ?? 0)} RSD
+                    </div>
+                  )}
+
+                  {}
                   <button
                     type="button"
-                    className="text-xl"
+                    className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow hover:bg-white transition"
                     title="Omiljeni"
                     onClick={(e) => {
                       e.preventDefault();
@@ -148,29 +172,47 @@ export default function RecipesPage() {
                     {isFav ? "❤️" : "🤍"}
                   </button>
                 </div>
-              </div>
+              </Link>
 
-              <p className="mt-2 line-clamp-3 text-sm text-gray-700">{r.description}</p>
+              {}
+              <div className="p-5">
+                <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="block">
+                  <h2 className="text-lg font-semibold leading-snug tracking-tight">
+                    {r.title}
+                  </h2>
+                </Link>
 
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
-                <span className="rounded-md border px-2 py-1">⏱ {r.prepTimeMinutes} min</span>
-                <span className="rounded-md border px-2 py-1">⚡ {r.difficulty}</span>
-                <span className="rounded-md border px-2 py-1">🏷 {catName}</span>
+                <p className="mt-2 line-clamp-3 text-sm text-gray-700">
+                  {r.description}
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-800">
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
+                    ⏱ {r.prepTimeMinutes} min
+                  </span>
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
+                    ⚡ Težina: {r.difficulty}
+                  </span>
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
+                    🏷 {catName}
+                  </span>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
+      {}
       {filtered.length === 0 && !err && (
-        <div className="mt-10 rounded-lg border bg-white p-6 text-center">
+        <div className="mt-10 rounded-3xl border bg-white p-8 text-center shadow-sm">
           <p className="text-gray-700">Nema rezultata za ovu pretragu.</p>
           <button
             onClick={() => {
               setQ("");
               setCategory("SVE");
             }}
-            className="mt-3 rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+            className="mt-4 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition"
           >
             Resetuj filtere
           </button>

@@ -5,6 +5,31 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
 import { useCart } from "@/context/CartContext";
 
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <Link
+      href={href}
+      className={[
+        "rounded-full px-3 py-1.5 text-sm transition",
+        active
+          ? "bg-amber-100 text-amber-900 font-semibold"
+          : "text-gray-700 hover:bg-gray-100",
+      ].join(" ")}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,64 +56,44 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="w-full border-b bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-lg font-semibold">
+    <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
+      <div className="container-app flex items-center justify-between py-3">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
           Recepti aplikacija
         </Link>
 
-        <div className="flex items-center gap-4">
-          <Link href="/recipes" className="hover:underline">
-            Recepti
-          </Link>
+        <div className="flex items-center gap-2">
+          <NavLink href="/recipes">Recepti</NavLink>
+          <NavLink href="/sastojci">Sastojci</NavLink>
 
-          <Link href="/sastojci" className="hover:underline">
-            Sastojci
-          </Link>
+        <div className="relative">
+  <NavLink href="/cart">Korpa</NavLink>
 
+  {cart.totalItems > 0 && (
+    <span className="pointer-events-none absolute -right-1 -top-1 inline-flex min-w-[22px] items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+      {cart.totalItems}
+    </span>
+  )}
+</div>
 
+          <div className="ml-2 flex items-center gap-2">
+            {loading ? (
+              <span className="text-sm text-gray-500">Učitavanje...</span>
+            ) : user ? (
+              <>
+                {}
+                <NavLink href="/kuvar/recipes">Kuvar panel</NavLink>
 
-          <Link href="/cart" className="relative hover:underline">
-            Korpa
-            {cart.totalItems > 0 && (
-              <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
-                {cart.totalItems}
-              </span>
+                <NavLink href="/profile">Profil</NavLink>
+
+                <button type="button" onClick={onLogout} className="btn">
+                  Odjava
+                </button>
+              </>
+            ) : (
+              <NavLink href="/login">Prijava</NavLink>
             )}
-          </Link>
-
-          <Link href="/kuvar/recipes" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-            Kuvar panel
-          </Link>
-
-          {loading ? (
-            <span className="text-sm text-gray-500">Učitavanje...</span>
-          ) : user ? (
-            <>
-              {/* admin */}
-              {user.role === "ADMIN" && (
-                <Link href="/admin" className="hover:underline font-semibold text-red-600">
-                  Admin
-                </Link>
-              )}
-
-              <Link href="/profile" className="hover:underline">
-                Profil
-              </Link>
-
-              <button
-                type="button"
-                onClick={onLogout}
-                className="rounded border px-3 py-1 text-sm hover:bg-gray-50"
-              >
-                Odjava
-              </button>
-            </>
-          ) : (
-            <Link href="/login" className="hover:underline">
-              Prijava
-            </Link>
-          )}
+          </div>
         </div>
       </div>
     </nav>
