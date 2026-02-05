@@ -360,6 +360,38 @@ const INGREDIENT_META: Record<string, Meta> = {
 kari: { unit: "ml", qty: 100, priceRsd: 200 },
 
 
+  banana: { unit: "kg", qty: 1, priceRsd: 220 },
+  borovnica: { unit: "g", qty: 125, priceRsd: 260 },
+  "grožđe": { unit: "kg", qty: 1, priceRsd: 320 },
+  jabuka: { unit: "kg", qty: 1, priceRsd: 160 },
+  jagoda: { unit: "g", qty: 250, priceRsd: 320 },
+  kajsija: { unit: "kg", qty: 1, priceRsd: 280 },
+  "kruška": { unit: "kg", qty: 1, priceRsd: 190 },
+  limun: { unit: "kg", qty: 1, priceRsd: 280 },
+  malina: { unit: "g", qty: 125, priceRsd: 350 },
+  mandarina: { unit: "kg", qty: 1, priceRsd: 220 },
+  "narandža": { unit: "kg", qty: 1, priceRsd: 200 },
+
+  bosiljak: { unit: "g", qty: 20, priceRsd: 120 },
+  "čili": { unit: "g", qty: 50, priceRsd: 160 },
+  cimet: { unit: "g", qty: 20, priceRsd: 120 },
+  "lovorov list": { unit: "g", qty: 10, priceRsd: 80 },
+  "muškatni oraščić": { unit: "g", qty: 10, priceRsd: 150 },
+  origano: { unit: "g", qty: 20, priceRsd: 120 },
+  "paprika začinska": { unit: "g", qty: 50, priceRsd: 120 },
+  "peršun": { unit: "g", qty: 20, priceRsd: 80 },
+  "soda bikarbona": { unit: "g", qty: 100, priceRsd: 110 },
+  "začini": { unit: "g", qty: 30, priceRsd: 150 },
+
+ 
+  kinoa: { unit: "g", qty: 500, priceRsd: 550 },
+  "kus-kus": { unit: "g", qty: 500, priceRsd: 320 },
+  makarone: { unit: "g", qty: 500, priceRsd: 150 },
+  "ovsene pahuljice": { unit: "g", qty: 500, priceRsd: 190 },
+  prezle: { unit: "g", qty: 500, priceRsd: 140 },
+  "špagete": { unit: "g", qty: 500, priceRsd: 150 },
+
+
 };
 
 async function seedIngredientsWithMeta() {
