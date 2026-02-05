@@ -22,66 +22,89 @@ async function getMe() {
   if (!session) return null;
   if (session.expiresAt < new Date()) return null;
   if (session.user.isBlocked) return null;
+
   return session.user;
 }
 
-async function canAccessRecipe(meId: string, role: string, recipeId: string) {
-  const r = await prisma.recipe.findUnique({
+async function getRecipeForEdit(recipeId: string) {
+  return prisma.recipe.findUnique({
     where: { id: recipeId },
-    select: { id: true, authorId: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      difficulty: true,
+      prepTimeMinutes: true,
+      imageUrl: true,
+      isPublished: true,
+      isPremium: true,
+      priceRSD: true,
+      authorId: true,
+      categoryId: true,
+      category: { select: { id: true, name: true } },
+      steps: {
+        orderBy: { stepNumber: "asc" },
+        select: { id: true, stepNumber: true, text: true },
+      },
+      ingredients: {
+        select: {
+          ingredientId: true,
+          quantity: true,
+          unit: true,
+          ingredient: { select: { id: true, name: true } },
+        },
+      },
+    },
   });
-  if (!r) return { ok: false as const, recipe: null };
-  if (role === "ADMIN") return { ok: true as const, recipe: r };
-  return { ok: r.authorId === meId, recipe: r };
 }
 
-export async function GET(_req: Request, ctx: { params: { id: string } }) {
-  const recipeId = decodeURIComponent(ctx.params.id);
+function canManage(me: { id: string; role: string }, authorId: string) {
+  return me.role === "ADMIN" || (me.role === "KUVAR" && me.id === authorId);
+}
+
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const me = await getMe();
     if (!me) return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
     if (!(me.role === "KUVAR" || me.role === "ADMIN"))
       return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
-    const access = await canAccessRecipe(me.id, me.role, recipeId);
-    if (!access.recipe) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
-    if (!access.ok) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    const { id } = await ctx.params;
+    const recipeId = decodeURIComponent(id ?? "").trim();
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: recipeId },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        prepTimeMinutes: true,
-        difficulty: true,
-        imageUrl: true,
-        isPremium: true,
-        priceRSD: true,
-        isPublished: true,
-        categoryId: true,
-        ingredients: { select: { ingredientId: true, quantity: true, unit: true } },
-        steps: { orderBy: { stepNumber: "asc" }, select: { stepNumber: true, text: true } },
-      },
-    });
+    const recipe = await getRecipeForEdit(recipeId);
+    if (!recipe) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
 
-    return NextResponse.json({ ok: true, recipe });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Ne mogu da učitam recept za izmenu." }, { status: 500 });
+    if (!canManage(me, recipe.authorId))
+      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+
+    return NextResponse.json({ ok: true, recipe }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(req: Request, ctx: { params: { id: string } }) {
-  const recipeId = decodeURIComponent(ctx.params.id);
+export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const me = await getMe();
     if (!me) return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
     if (!(me.role === "KUVAR" || me.role === "ADMIN"))
       return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
-    const access = await canAccessRecipe(me.id, me.role, recipeId);
-    if (!access.recipe) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
-    if (!access.ok) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    const { id } = await ctx.params;
+    const recipeId = decodeURIComponent(id ?? "").trim();
+
+    const existing = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { id: true, authorId: true },
+    });
+    if (!existing) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+
+    if (!canManage(me, existing.authorId))
+      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
 
@@ -89,78 +112,135 @@ export async function PUT(req: Request, ctx: { params: { id: string } }) {
     const description = String(body.description ?? "").trim();
     const prepTimeMinutes = Number(body.prepTimeMinutes ?? 0);
     const difficulty = Number(body.difficulty ?? 0);
-    const imageUrl = body.imageUrl ? String(body.imageUrl) : null;
+    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
 
     const isPremium = Boolean(body.isPremium ?? false);
     const priceRSD = isPremium ? Number(body.priceRSD ?? 0) : 0;
-    const categoryId = String(body.categoryId ?? "").trim();
     const isPublished = Boolean(body.isPublished ?? false);
+    const categoryId = String(body.categoryId ?? "").trim();
 
-    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : [];
     const steps = Array.isArray(body.steps) ? body.steps : [];
+    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : [];
 
-    if (!title || !description || !categoryId)
+    if (!title || !description || !categoryId) {
       return NextResponse.json({ ok: false, error: "INVALID_INPUT" }, { status: 400 });
+    }
+    if (!Number.isFinite(prepTimeMinutes) || prepTimeMinutes <= 0) {
+      return NextResponse.json({ ok: false, error: "INVALID_TIME" }, { status: 400 });
+    }
+    if (!Number.isFinite(difficulty) || difficulty <= 0) {
+      return NextResponse.json({ ok: false, error: "INVALID_DIFFICULTY" }, { status: 400 });
+    }
+    if (isPremium && (!Number.isFinite(priceRSD) || priceRSD <= 0)) {
+      return NextResponse.json({ ok: false, error: "PRICE_REQUIRED" }, { status: 400 });
+    }
 
-    // BRISANJE STARIH steps/ingredients pa upis novih (najjednostavnije)
-    await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
-    await prisma.step.deleteMany({ where: { recipeId } });
+    const stepTexts: string[] = steps
+      .map((s: any) => String(s?.text ?? "").trim())
+      .filter(Boolean);
 
-    await prisma.recipe.update({
-      where: { id: recipeId },
-      data: {
-        title,
-        description,
-        prepTimeMinutes,
-        difficulty,
-        imageUrl,
-        isPremium,
-        priceRSD,
-        categoryId,
-        isPublished,
+    if (stepTexts.length === 0) {
+      return NextResponse.json({ ok: false, error: "STEPS_REQUIRED" }, { status: 400 });
+    }
 
-        steps: {
-          create: steps
-            .map((s: any) => String(s?.text ?? "").trim())
-            .filter(Boolean)
-            .map((text: string, idx: number) => ({ stepNumber: idx + 1, text })),
+   
+    const ingRows = ingredients
+      .map((x: any) => {
+        const raw = String(x?.ingredientId ?? "").trim();
+        const quantity = Number(x?.quantity);
+        const unit = String(x?.unit ?? "").trim();
+        if (!raw) return null;
+        if (!unit) return null;
+        if (!Number.isFinite(quantity) || quantity <= 0) return null;
+        return { raw, quantity, unit };
+      })
+      .filter(Boolean) as Array<{ raw: string; quantity: number; unit: string }>;
+
+    if (ingRows.length === 0) {
+      return NextResponse.json({ ok: false, error: "INGREDIENTS_REQUIRED" }, { status: 400 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: {
+          title,
+          description,
+          prepTimeMinutes,
+          difficulty,
+          imageUrl,
+          isPremium,
+          priceRSD,
+          isPublished,
+          categoryId,
         },
+      });
 
-        ingredients: {
-          create: ingredients
-            .filter((x: any) => x && x.ingredientId)
-            .map((x: any) => ({
-              ingredientId: String(x.ingredientId),
-              quantity: Number(x.quantity ?? 0),
-              unit: String(x.unit ?? "").trim(),
-            })),
-        },
-      },
-      select: { id: true },
+      await tx.step.deleteMany({ where: { recipeId } });
+      await tx.recipeIngredient.deleteMany({ where: { recipeId } });
+
+      await tx.step.createMany({
+        data: stepTexts.map((text, idx) => ({
+          recipeId,
+          stepNumber: idx + 1,
+          text,
+        })),
+      });
+
+      for (const row of ingRows) {
+        let ing = await tx.ingredient.findUnique({ where: { id: row.raw } }).catch(() => null);
+        if (!ing) ing = await tx.ingredient.findUnique({ where: { name: row.raw } }).catch(() => null);
+
+        if (!ing) {
+          ing = await tx.ingredient.create({ data: { name: row.raw } });
+        }
+
+        await tx.recipeIngredient.create({
+          data: {
+            recipeId,
+            ingredientId: ing.id,
+            quantity: row.quantity,
+            unit: row.unit,
+          },
+        });
+      }
     });
 
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Ne mogu da sačuvam izmene." }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(_req: Request, ctx: { params: { id: string } }) {
-  const recipeId = decodeURIComponent(ctx.params.id);
+export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const me = await getMe();
     if (!me) return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
     if (!(me.role === "KUVAR" || me.role === "ADMIN"))
       return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
-    const access = await canAccessRecipe(me.id, me.role, recipeId);
-    if (!access.recipe) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
-    if (!access.ok) return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    const { id } = await ctx.params;
+    const recipeId = decodeURIComponent(id ?? "").trim();
+
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { id: true, authorId: true },
+    });
+
+    if (!recipe) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+
+    if (!canManage(me, recipe.authorId))
+      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
     await prisma.recipe.delete({ where: { id: recipeId } });
-
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Ne mogu da obrišem recept." }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
+      { status: 500 }
+    );
   }
 }

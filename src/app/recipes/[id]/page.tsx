@@ -72,14 +72,32 @@ export default function RecipeDetailsPage() {
     });
   };
 
-  const buyPremium = () => {
-    setPurchased((prev) => {
-      if (prev.includes(id)) return prev;
-      const updated = [...prev, id];
-      localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  };
+  const buyPremium = async () => {
+  const res = await fetch(`/api/recipes/${encodeURIComponent(id)}/purchase`, {
+    method: "POST",
+  });
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data?.ok) {
+    alert(data?.error ?? "Ne mogu da kupim premium recept.");
+    return;
+  }
+
+  setPurchased((prev) => {
+    if (prev.includes(id)) return prev;
+    const updated = [...prev, id];
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(updated));
+    return updated;
+  });
+
+  const r2 = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+  const d2 = await r2.json().catch(() => null);
+  if (r2.ok && d2?.ok && d2?.recipe) {
+    setRecipe(d2.recipe);
+    setLocked(Boolean(d2.locked));
+  }
+};
+
 
   if (loading) {
     return (

@@ -106,4 +106,170 @@ export async function GET(
     );
   }
 }
+export async function PUT(
+  req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const me = await getCurrentUserLite();
+  if (!me) {
+    return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
+  }
+  if (!(me.role === "KUVAR" || me.role === "ADMIN")) {
+    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+  }
+
+  const { id } = await ctx.params;
+  const recipeId = decodeURIComponent(id ?? "").trim();
+
+  try {
+    const existing = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { id: true, authorId: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+    }
+
+    // KUVAR može samo svoje; ADMIN može sve
+    if (me.role === "KUVAR" && existing.authorId !== me.id) {
+      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+
+    const title = String(body.title ?? "").trim();
+    const description = String(body.description ?? "").trim();
+    const prepTimeMinutes = Number(body.prepTimeMinutes ?? 0);
+    const difficulty = Number(body.difficulty ?? 0);
+    const imageUrl = body.imageUrl ? String(body.imageUrl) : null;
+
+    const isPremium = Boolean(body.isPremium ?? false);
+    const priceRSD = isPremium ? Number(body.priceRSD ?? 0) : 0;
+
+    const categoryId = String(body.categoryId ?? "").trim();
+    const isPublished = Boolean(body.isPublished ?? false);
+
+    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : [];
+    const steps = Array.isArray(body.steps) ? body.steps : [];
+
+    if (!title || !description || !categoryId) {
+      return NextResponse.json({ ok: false, error: "INVALID_INPUT" }, { status: 400 });
+    }
+    if (!Number.isFinite(prepTimeMinutes) || prepTimeMinutes <= 0) {
+      return NextResponse.json({ ok: false, error: "INVALID_TIME" }, { status: 400 });
+    }
+    if (!Number.isFinite(difficulty) || difficulty <= 0) {
+      return NextResponse.json({ ok: false, error: "INVALID_DIFFICULTY" }, { status: 400 });
+    }
+    if (isPremium && (!Number.isFinite(priceRSD) || priceRSD <= 0)) {
+      return NextResponse.json({ ok: false, error: "PRICE_REQUIRED" }, { status: 400 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: {
+          title,
+          description,
+          prepTimeMinutes,
+          difficulty,
+          imageUrl,
+          isPremium,
+          priceRSD,
+          isPublished,
+          categoryId,
+        },
+      });
+
+      // reset steps
+      await tx.step.deleteMany({ where: { recipeId } });
+      await tx.step.createMany({
+        data: steps
+          .map((s: any) => String(s?.text ?? "").trim())
+          .filter(Boolean)
+          .map((text: string, idx: number) => ({
+            recipeId,
+            stepNumber: idx + 1,
+            text,
+          })),
+      });
+
+      // reset ingredients (join tabela)
+      await tx.recipeIngredient.deleteMany({ where: { recipeId } });
+
+      // ponovno ubaci sastojke (isti princip kao u POST)
+      for (const x of ingredients) {
+        const name = String(x?.ingredientId ?? "").trim(); // kod tebe je ovo NAZIV
+        const qty = Number(x?.quantity);
+        const unit = String(x?.unit ?? "").trim();
+        if (!name || !unit || !Number.isFinite(qty) || qty <= 0) continue;
+
+        const ing = await tx.ingredient.upsert({
+          where: { name },
+          update: {},
+          create: { name },
+          select: { id: true },
+        });
+
+        await tx.recipeIngredient.create({
+          data: {
+            recipeId,
+            ingredientId: ing.id,
+            quantity: qty,
+            unit,
+          },
+        });
+      }
+    });
+
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const me = await getCurrentUserLite();
+  if (!me) {
+    return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
+  }
+  if (!(me.role === "KUVAR" || me.role === "ADMIN")) {
+    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+  }
+
+  const { id } = await ctx.params;
+  const recipeId = decodeURIComponent(id ?? "").trim();
+
+  try {
+    const existing = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { id: true, authorId: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+    }
+
+    if (me.role === "KUVAR" && existing.authorId !== me.id) {
+      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    }
+
+    await prisma.recipe.delete({ where: { id: recipeId } });
+
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
+      { status: 500 }
+    );
+  }
+}
+
 

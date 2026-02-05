@@ -41,7 +41,7 @@ export default function EditRecipePage() {
             setLoading(true);
             setErr(null);
 
-            const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+            const res = await fetch(`/api/kuvar/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
             const data = await res.json().catch(() => null);
 
             if (!res.ok || !data?.ok) {
@@ -133,11 +133,12 @@ export default function EditRecipePage() {
             ingredients,
         };
 
-        const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, {
+        const res = await fetch(`/api/kuvar/recipes/${encodeURIComponent(id)}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
         });
+
 
         const data = await res.json().catch(() => null);
         if (!res.ok || !data?.ok) {
