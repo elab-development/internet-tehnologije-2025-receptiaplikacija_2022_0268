@@ -35,7 +35,6 @@ export default async function AdminUsersPage() {
   if (!user) redirect("/login");
   if (user.role !== "ADMIN") redirect("/");
 
-  // ✅ cookies() je async u tvojoj verziji Next-a, zato ide await
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value ?? "";
   const cookieHeader = token ? `session=${token}` : "";
@@ -78,8 +77,22 @@ export default async function AdminUsersPage() {
               const fullName = [u.firstName ?? "", u.lastName ?? ""]
                 .join(" ")
                 .trim();
+              const displayName = u.name?.trim() || fullName || "-";
 
-              const displayName = (u.name?.trim() || fullName || "-");
+              const isSelf = u.id === user.id;
+
+              const blockTitle = isSelf
+                ? "Ne možete blokirati sopstveni nalog"
+                : u.isBlocked
+                ? "Reaktiviraj korisnika"
+                : "Blokiraj korisnika";
+
+              const deleteTitle = isSelf
+                ? "Ne možete obrisati sopstveni nalog"
+                : "Obriši korisnika";
+
+              const disabledBtnClass =
+                "opacity-50 cursor-not-allowed hover:bg-transparent";
 
               return (
                 <tr key={u.id} className="border-t">
@@ -88,6 +101,7 @@ export default async function AdminUsersPage() {
                   <td className="px-3 py-2">{u.role}</td>
                   <td className="px-3 py-2">{u.isPremium ? "DA" : "NE"}</td>
                   <td className="px-3 py-2">{u.isBlocked ? "DA" : "NE"}</td>
+
                   <td className="px-3 py-2">
                     <div className="flex gap-2">
                       <form action="/admin/users/actions" method="post">
@@ -97,15 +111,28 @@ export default async function AdminUsersPage() {
                           name="action"
                           value={u.isBlocked ? "reactivate" : "block"}
                         />
-                        <button className="rounded border px-2 py-1 hover:bg-gray-50">
+                        <button
+                          type="submit"
+                          disabled={isSelf}
+                          title={blockTitle}
+                          className={`rounded border px-2 py-1 hover:bg-gray-50 ${
+                            isSelf ? disabledBtnClass : ""
+                          }`}
+                        >
                           {u.isBlocked ? "Reaktiviraj" : "Blokiraj"}
                         </button>
                       </form>
-
                       <form action="/admin/users/actions" method="post">
                         <input type="hidden" name="userId" value={u.id} />
                         <input type="hidden" name="action" value="delete" />
-                        <button className="rounded border px-2 py-1 hover:bg-gray-50">
+                        <button
+                          type="submit"
+                          disabled={isSelf}
+                          title={deleteTitle}
+                          className={`rounded border px-2 py-1 hover:bg-gray-50 ${
+                            isSelf ? disabledBtnClass : ""
+                          }`}
+                        >
                           Obriši
                         </button>
                       </form>

@@ -6,8 +6,10 @@ import { getCurrentUser } from "@/lib/authz";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json(
@@ -35,24 +37,40 @@ export async function PATCH(
 
   try {
     const category = await prisma.categoryRecipe.update({
-      where: { id: params.id },
+      where: { id },
       data: { name },
       select: { id: true, name: true },
     });
 
     return NextResponse.json({ ok: true, category });
-  } catch {
+  } catch (e: any) {
+    if (e?.code === "P2025") {
+      return NextResponse.json(
+        { ok: false, error: "Kategorija nije pronađena." },
+        { status: 404 }
+      );
+    }
+
+    if (e?.code === "P2002") {
+      return NextResponse.json(
+        { ok: false, error: "Naziv kategorije već postoji." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      { ok: false, error: "Neuspešna izmena (kategorija ne postoji ili naziv već postoji)." },
-      { status: 409 }
+      { ok: false, error: "Neuspešna izmena kategorije." },
+      { status: 500 }
     );
   }
 }
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json(
@@ -62,14 +80,30 @@ export async function DELETE(
   }
 
   try {
-    await prisma.categoryRecipe.delete({
-      where: { id: params.id },
-    });
+    const usedCount = await prisma.recipe.count({ where: { categoryId: id } });
+    if (usedCount > 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Ne možete obrisati kategoriju jer je u upotrebi (${usedCount} recepata).`,
+        },
+        { status: 409 }
+      );
+    }
+
+    await prisma.categoryRecipe.delete({ where: { id } });
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (e: any) {
+    if (e?.code === "P2025") {
+      return NextResponse.json(
+        { ok: false, error: "Kategorija nije pronađena." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { ok: false, error: "Brisanje nije uspelo (kategorija ne postoji ili je u upotrebi)." },
+      { ok: false, error: "Brisanje nije uspelo." },
       { status: 409 }
     );
   }

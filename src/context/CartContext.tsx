@@ -63,20 +63,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     auth = null;
   }
 
-  const userId = auth?.user?.id ?? null;
+  const user = auth?.user ?? null;
+  const isAdmin = user?.role === "ADMIN";
+
+  const userId = user?.id ?? null;
   const storageKey = userId ? `cart:user:${userId}` : "cart:guest";
 
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
+    if (isAdmin) {
+      setItems([]);
+      return;
+    }
     setItems(readStorage(storageKey));
-  }, [storageKey]);
+  }, [storageKey, isAdmin]);
 
   useEffect(() => {
+    if (isAdmin) return;
     writeStorage(storageKey, items);
-  }, [storageKey, items]);
+  }, [storageKey, items, isAdmin]);
 
   const addToCart: CartCtx["addToCart"] = (item, qty = 1) => {
+    if (isAdmin) return; 
+
     const addQty = Math.max(1, Number(qty) || 1);
 
     setItems((prev) => {
@@ -90,30 +100,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeFromCart: CartCtx["removeFromCart"] = (id, kind) => {
+    if (isAdmin) return;
     setItems((prev) => prev.filter((p) => !(p.id === id && p.kind === kind)));
   };
 
   const setQty: CartCtx["setQty"] = (id, kind, qty) => {
+    if (isAdmin) return;
     const q = Math.max(1, Number(qty) || 1);
     setItems((prev) =>
       prev.map((p) => (p.id === id && p.kind === kind ? { ...p, qty: q } : p))
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    if (isAdmin) return;
+    setItems([]);
+  };
 
   const totalItems = useMemo(
-    () => items.reduce((sum, it) => sum + (it.qty || 0), 0),
-    [items]
+    () => (isAdmin ? 0 : items.reduce((sum, it) => sum + (it.qty || 0), 0)),
+    [items, isAdmin]
   );
 
   const totalPriceRsd = useMemo(
-    () => items.reduce((sum, it) => sum + (Number(it.priceRsd) || 0) * (Number(it.qty) || 0), 0),
-    [items]
+    () =>
+      isAdmin
+        ? 0
+        : items.reduce(
+            (sum, it) =>
+              sum + (Number(it.priceRsd) || 0) * (Number(it.qty) || 0),
+            0
+          ),
+    [items, isAdmin]
   );
 
   const value: CartCtx = {
-    items,
+    items: isAdmin ? [] : items,
     totalItems,
     totalPriceRsd,
     addToCart,

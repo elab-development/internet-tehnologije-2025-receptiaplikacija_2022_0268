@@ -26,7 +26,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; 
+    const { id } = await context.params;
     const recipeId = decodeURIComponent(id);
 
     const reviews = await prisma.review.findMany({
@@ -51,7 +51,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // Next 15
+    const { id } = await context.params;
     const recipeId = decodeURIComponent(id);
 
     const body = await req.json().catch(() => null);
@@ -68,7 +68,6 @@ export async function POST(
       );
     }
 
-   
     const userId = await getCurrentUserIdFromSession();
     if (!userId) {
       return NextResponse.json(
@@ -77,7 +76,6 @@ export async function POST(
       );
     }
 
-   
     const recipeExists = await prisma.recipe.findUnique({
       where: { id: recipeId },
       select: { id: true },
@@ -86,7 +84,6 @@ export async function POST(
       return NextResponse.json({ error: "Recept ne postoji." }, { status: 404 });
     }
 
-   
     const already = await prisma.review.findUnique({
       where: { userId_recipeId: { userId, recipeId } },
       select: { id: true },
@@ -110,12 +107,25 @@ export async function POST(
       },
     });
 
+    const stats = await prisma.review.aggregate({
+      where: { recipeId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    await prisma.recipe.update({
+      where: { id: recipeId },
+      data: {
+        avgRating: stats._avg.rating ?? 0,
+        reviewsCount: stats._count.rating,
+      },
+    });
+
     return NextResponse.json(
       { message: "Recenzija je uspešno ostavljena.", review: created },
       { status: 201 }
     );
   } catch (e: any) {
-  
     if (String(e?.message || "").includes("Unique constraint")) {
       return NextResponse.json(
         { error: "Već si ostavio recenziju za ovaj recept." },

@@ -26,8 +26,12 @@ async function getCurrentUserLite() {
   return session.user;
 }
 
-export async function GET(_req: Request, ctx: { params: { id: string } }) {
-  const recipeId = decodeURIComponent(ctx.params.id ?? "").trim();
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
+  const recipeId = decodeURIComponent(id ?? "").trim();
 
   try {
     const recipe = await prisma.recipe.findUnique({
@@ -62,7 +66,10 @@ export async function GET(_req: Request, ctx: { params: { id: string } }) {
     });
 
     if (!recipe) {
-      return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "NOT_FOUND" },
+        { status: 404 }
+      );
     }
 
     if (!recipe.isPremium) {
@@ -99,3 +106,4 @@ export async function GET(_req: Request, ctx: { params: { id: string } }) {
     );
   }
 }
+

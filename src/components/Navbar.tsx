@@ -66,15 +66,18 @@ export default function Navbar() {
           <NavLink href="/recipes">Recepti</NavLink>
           <NavLink href="/sastojci">Sastojci</NavLink>
 
-          <div className="relative">
-            <NavLink href="/cart">Korpa</NavLink>
+          {user?.role !== "ADMIN" && (
+            <div className="relative">
+              <NavLink href="/cart">Korpa</NavLink>
 
-            {cart.totalItems > 0 && (
-              <span className="pointer-events-none absolute -right-1 -top-1 inline-flex min-w-[22px] items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
-                {cart.totalItems}
-              </span>
-            )}
-          </div>
+              {cart.totalItems > 0 && (
+                <span className="pointer-events-none absolute -right-1 -top-1 inline-flex min-w-[22px] items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                  {cart.totalItems}
+                </span>
+              )}
+            </div>
+          )}
+
 
           <div className="ml-2 flex items-center gap-2">
             {loading ? (
@@ -83,6 +86,9 @@ export default function Navbar() {
               <>
                 {user.role === "KUVAR" && (
                   <NavLink href="/kuvar/recipes">Kuvar panel</NavLink>
+                )}
+                {user.role === "ADMIN" && (
+                  <NavLink href="/admin">Admin panel</NavLink>
                 )}
 
                 <NavLink href="/profile">Profil</NavLink>
