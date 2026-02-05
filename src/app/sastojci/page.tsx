@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { prisma } from "../../lib/prisma";
-import IngredientQty from "@/components/IngredientQty";
+import SastojciClient from "./SastojciClient";
 
 type GroupedItem = {
   id: string;
@@ -9,88 +10,65 @@ type GroupedItem = {
   priceRsd: number | null;
 };
 
+type Group = {
+  categoryName: string;
+  items: GroupedItem[];
+};
+
 export default async function SastojciPage() {
   const ingredients = await prisma.ingredient.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: [
-      { category: { name: "asc" } },
-      { name: "asc" },
-    ],
+    include: { category: true },
+    orderBy: [{ category: { name: "asc" } }, { name: "asc" }],
   });
 
-  const grouped: Record<string, GroupedItem[]> = {};
+  const groupsMap = new Map<string, GroupedItem[]>();
 
-  for (const ing of ingredients) {
-    const categoryName = ing.category?.name ?? "Ostalo";
+  for (const it of ingredients) {
+    const catName = it.category?.name ?? "Ostalo";
+    const item: GroupedItem = {
+      id: it.id,
+      name: it.name,
+      defaultUnit: it.defaultUnit ?? null,
+      defaultQty: it.defaultQty ?? null,
+      priceRsd: it.priceRsd ?? null,
+    };
 
-    if (!grouped[categoryName]) {
-      grouped[categoryName] = [];
-    }
-
-    grouped[categoryName].push({
-      id: ing.id,
-      name: ing.name,
-      defaultUnit: ing.defaultUnit ?? null,
-      defaultQty: ing.defaultQty ?? null,
-      priceRsd: ing.priceRsd ?? null,
-    });
+    const arr = groupsMap.get(catName) ?? [];
+    arr.push(item);
+    groupsMap.set(catName, arr);
   }
 
-  const categories = Object.keys(grouped);
+  const groups: Group[] = Array.from(groupsMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([categoryName, items]) => ({ categoryName, items }));
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <h1 className="mb-8 text-4xl font-bold">Sastojci</h1>
+    <main className="mx-auto max-w-6xl px-4 py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          
+  <h1 className="text-4xl font-bold tracking-tight">Sastojci</h1>
+        </div>
 
-      {categories.length === 0 ? (
-        <p>Nema sastojaka u bazi.</p>
-      ) : (
-        categories.map((category) => (
-          <section key={category} className="mb-10">
-            <h2 className="mb-4 text-2xl font-semibold">{category}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/recipes"
+            className="inline-flex items-center justify-center rounded-full border bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+          >
+            ← Recepti
+          </Link>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {grouped[category].map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-2xl border p-5"
-                >
-                  {}
-                  <div className="min-w-0">
-                    {}
-                    <div className="text-lg font-semibold">
-                      {item.name}
-                    </div>
+          <Link
+            href="/cart"
+            className="inline-flex items-center justify-center rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition"
+          >
+            Korpa →
+          </Link>
+        </div>
+      </div>
 
-                    {}
-                    <div className="text-sm text-gray-600">
-                      {item.defaultQty != null && item.defaultUnit != null
-                        ? `${item.defaultQty} ${item.defaultUnit}`
-                        : "Nema podrazumevane količine"}
-                    </div>
-
-                    {}
-                    <div className="text-sm text-gray-800 font-medium mt-1">
-                      {item.priceRsd != null
-                        ? `${item.priceRsd} RSD`
-                        : "Cena nije definisana"}
-                    </div>
-                  </div>
-
-                  {}
-                  <IngredientQty
-                    id={item.id}
-                    title={item.name}
-                    priceRsd={item.priceRsd ?? 0}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        ))
-      )}
+      {}
+      <SastojciClient groups={groups} />
     </main>
   );
 }

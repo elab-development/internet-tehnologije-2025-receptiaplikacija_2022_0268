@@ -8,11 +8,7 @@ export type CartItem = {
   kind: "RECIPE" | "INGREDIENT";
   title: string;
   qty: number;
-
-  
   priceRsd: number;
-
-
   image?: string;
 };
 
@@ -34,18 +30,17 @@ function readStorage(key: string): CartItem[] {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
- 
     return parsed
-      .filter((x) => x && typeof x.id === "string")
-      .map((x) => ({
+      .filter((x: any) => x && typeof x.id === "string")
+      .map((x: any): CartItem => ({
         id: String(x.id),
         kind: x.kind === "RECIPE" ? "RECIPE" : "INGREDIENT",
         title: String(x.title ?? ""),
         qty: Number(x.qty ?? 1),
-        priceRsd: Number(x.priceRsd ?? x.price ?? 0), 
+        priceRsd: Number(x.priceRsd ?? x.price ?? 0),
         image: x.image ? String(x.image) : undefined,
       }));
   } catch {
@@ -73,12 +68,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const [items, setItems] = useState<CartItem[]>([]);
 
- 
   useEffect(() => {
     setItems(readStorage(storageKey));
   }, [storageKey]);
 
- 
   useEffect(() => {
     writeStorage(storageKey, items);
   }, [storageKey, items]);
@@ -109,7 +102,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => setItems([]);
 
-  const totalItems = useMemo(() => items.reduce((sum, it) => sum + (it.qty || 0), 0), [items]);
+  const totalItems = useMemo(
+    () => items.reduce((sum, it) => sum + (it.qty || 0), 0),
+    [items]
+  );
 
   const totalPriceRsd = useMemo(
     () => items.reduce((sum, it) => sum + (Number(it.priceRsd) || 0) * (Number(it.qty) || 0), 0),

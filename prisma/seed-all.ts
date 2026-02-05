@@ -230,7 +230,7 @@ const INGREDIENT_GROUPS: Record<string, string[]> = {
     "tortilja",
     "kinoa",
   ],
-  "Mahune / proteinsko biljno": ["pasulj", "leblebije", "tofu", "indijski orah", "susam"],
+  "Mahunarke / proteinsko biljno": ["pasulj", "leblebije", "tofu", "indijski orah", "susam"],
   "Začini": [
     "so",
     "biber",
