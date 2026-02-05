@@ -46,6 +46,8 @@ export default function Navbar() {
             Sastojci
           </Link>
 
+
+
           <Link href="/cart" className="relative hover:underline">
             Korpa
             {cart.totalItems > 0 && (
@@ -53,6 +55,10 @@ export default function Navbar() {
                 {cart.totalItems}
               </span>
             )}
+          </Link>
+
+          <Link href="/kuvar/recipes" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+            Kuvar panel
           </Link>
 
           {loading ? (
@@ -88,3 +94,6 @@ export default function Navbar() {
     </nav>
   );
 }
+
+
+
