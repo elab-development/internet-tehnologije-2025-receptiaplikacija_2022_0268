@@ -17,6 +17,7 @@ export async function POST(req: Request) {
 
     const emailRaw = typeof body?.email === "string" ? body.email : "";
     const password = typeof body?.password === "string" ? body.password : "";
+    const name = typeof body?.name === "string" ? body.name.trim() : null;
 
     const firstName =
       typeof body?.firstName === "string" ? body.firstName.trim() : null;
@@ -26,7 +27,6 @@ export async function POST(req: Request) {
 
     const email = emailRaw.toLowerCase().trim();
 
-    // osnovne validacije
     if (!email || !email.includes("@")) {
       return NextResponse.json(
         { ok: false, error: "Neispravan email." },
@@ -48,7 +48,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // (opciono) provera pre create — lepo za poruke, ali nije obavezno
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json(
@@ -64,11 +63,20 @@ export async function POST(req: Request) {
         email,
         passwordHash,
         role,
+        name,
         firstName,
         lastName,
         phone,
       },
-      select: { id: true, email: true, role: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+      },
     });
 
 
