@@ -2,31 +2,6 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-export async function GET() {
-  try {
-    const recipes = await prisma.recipe.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        prepTimeMinutes: true,
-        difficulty: true,
-        imageUrl: true,
-        isPremium: true,
-        priceRSD: true,
-        category: { select: { name: true } },
-      },
-    });
-
-    return NextResponse.json({ ok: true, recipes });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Ne mogu da učitam recepte." }, { status: 500 });
-  }
-}
-
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "session";
@@ -51,12 +26,48 @@ async function getCurrentUserLite() {
   return session.user;
 }
 
+
+export async function GET() {
+  try {
+    const me = await getCurrentUserLite();
+
+    const where =
+      me && (me.role === "KUVAR" || me.role === "ADMIN")
+        ? { OR: [{ isPublished: true }, { authorId: me.id }] }
+        : { isPublished: true };
+
+    const recipes = await prisma.recipe.findMany({
+      where: {
+        isPublished: true,
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        prepTimeMinutes: true,
+        difficulty: true,
+        imageUrl: true,
+        isPremium: true,
+        priceRSD: true,
+        category: { select: { id: true, name: true } },
+      },
+    });
+
+
+    return NextResponse.json({ ok: true, recipes });
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Ne mogu da učitam recepte." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const me = await getCurrentUserLite();
-    if (!me) {
-      return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
-    }
+    if (!me) return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
     if (!(me.role === "KUVAR" || me.role === "ADMIN")) {
       return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
     }
@@ -106,7 +117,7 @@ export async function POST(req: Request) {
 
         steps: {
           create: steps
-            .map((s: any, idx: number) => String(s?.text ?? "").trim())
+            .map((s: any) => String(s?.text ?? "").trim())
             .filter(Boolean)
             .map((text: string, idx: number) => ({
               stepNumber: idx + 1,
@@ -117,40 +128,33 @@ export async function POST(req: Request) {
         ingredients: {
           create: ingredients
             .map((x: any) => {
-              const ingredientId = x?.ingredientId ? String(x.ingredientId).trim() : "";
-              const ingredientName = x?.name ? String(x.name).trim() : "";
-
+              const name = String(x?.ingredientId ?? "").trim();
               const qty = Number(x?.quantity);
               const unit = String(x?.unit ?? "").trim();
 
+              if (!name) return null;
               if (!unit) return null;
               if (!Number.isFinite(qty) || qty <= 0) return null;
 
-              if (ingredientId) {
-                return { quantity: qty, unit, ingredientId };
-              }
-
-              if (ingredientName) {
-                return {
-                  quantity: qty,
-                  unit,
-                  ingredient: {
-                    connectOrCreate: {
-                      where: { name: ingredientName },
-                      create: { name: ingredientName },
-                    },
+              return {
+                quantity: qty,
+                unit,
+                ingredient: {
+                  connectOrCreate: {
+                    where: { name },
+                    create: { name },
                   },
-                };
-              }
-              return null;
+                },
+              };
             })
             .filter(Boolean) as any,
         },
+
       },
-      select: { id: true },
+      select: { id: true, isPublished: true },
     });
 
-    return NextResponse.json({ ok: true, recipeId: created.id }, { status: 201 });
+    return NextResponse.json({ ok: true, recipeId: created.id, isPublished: created.isPublished }, { status: 201 });
   } catch {
     return NextResponse.json({ ok: false, error: "Ne mogu da kreiram recept." }, { status: 500 });
   }

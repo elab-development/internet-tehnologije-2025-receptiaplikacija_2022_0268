@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { RECIPES } from "@/lib/recipes";
 import { useCart } from "@/context/CartContext";
 import ReviewsSection from "@/components/ReviewsSection";
 import NutritionSearch from "@/components/NutritionSearch";
@@ -12,10 +11,18 @@ const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
 
 export default function RecipeDetailsPage() {
-  const params = useParams<{ id: string }>();
-  const id = decodeURIComponent(params?.id ?? "").trim();
+  const params = useParams() as any;
 
-  const recipe = RECIPES.find((r) => r.id.trim() === id);
+  const rawParam =
+    (typeof params?.id === "string" && params.id) ||
+    (typeof params?.recipeId === "string" && params.recipeId) ||
+    "";
+
+  const id = decodeURIComponent(rawParam).trim();
+
+  const [recipe, setRecipe] = useState<any>(null);
+  const [locked, setLocked] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [purchased, setPurchased] = useState<string[]>([]);
@@ -29,6 +36,33 @@ export default function RecipeDetailsPage() {
     const savedPremium = localStorage.getItem(PREMIUM_LS_KEY);
     if (savedPremium) setPurchased(JSON.parse(savedPremium));
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+
+      if (!id) {
+        setRecipe(null);
+        setLocked(false);
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok || !data?.recipe) {
+        setRecipe(null);
+        setLocked(false);
+        setLoading(false);
+        return;
+      }
+
+      setRecipe(data.recipe);
+      setLocked(Boolean(data.locked));
+      setLoading(false);
+    })();
+  }, [id]);
 
   const toggleFavorite = () => {
     setFavorites((prev) => {
@@ -47,6 +81,16 @@ export default function RecipeDetailsPage() {
     });
   };
 
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-10">
+        <div className="rounded-3xl border bg-white p-8 shadow-sm">
+          <p className="text-gray-700">Učitavam...</p>
+        </div>
+      </main>
+    );
+  }
+
   if (!recipe) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-10">
@@ -62,10 +106,9 @@ export default function RecipeDetailsPage() {
 
   const isFav = favorites.includes(id);
   const isBought = purchased.includes(id);
-  const locked = recipe.isPremium && !isBought;
 
-  const priceRsd = recipe.isPremium ? Number((recipe as any).priceRsd ?? 0) : 0;
-  const imageUrl = (recipe as any).imageUrl ?? null;
+  const priceRsd = recipe.isPremium ? Number(recipe.priceRSD ?? 0) : 0;
+  const imageUrl = recipe.imageUrl ?? null;
 
   const addRecipeToCart = () => {
     if (locked) return;
@@ -88,7 +131,6 @@ export default function RecipeDetailsPage() {
         ← Nazad na recepte
       </Link>
 
-      {/* HERO */}
       <div className="mt-5 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="relative h-64 w-full bg-gradient-to-br from-amber-100 to-rose-100">
           {imageUrl ? (
@@ -99,7 +141,6 @@ export default function RecipeDetailsPage() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
 
-          {/* top badges */}
           <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
             {recipe.isPremium && (
               <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-amber-900 shadow">
@@ -113,7 +154,6 @@ export default function RecipeDetailsPage() {
             )}
           </div>
 
-          {/* favorite */}
           <button
             onClick={toggleFavorite}
             className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/90 shadow hover:bg-white transition"
@@ -122,24 +162,20 @@ export default function RecipeDetailsPage() {
             {isFav ? "❤️" : "🤍"}
           </button>
 
-          {/* title */}
           <div className="absolute bottom-4 left-4 right-4">
-            <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow">
-              {recipe.title}
-            </h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow">{recipe.title}</h1>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/95">
-              <span className="rounded-full bg-white/15 px-3 py-1">⏱ {recipe.timeMin} min</span>
+              <span className="rounded-full bg-white/15 px-3 py-1">⏱ {recipe.prepTimeMinutes} min</span>
               <span className="rounded-full bg-white/15 px-3 py-1">⚡ {recipe.difficulty}</span>
-              <span className="rounded-full bg-white/15 px-3 py-1">🏷 {recipe.category}</span>
+              <span className="rounded-full bg-white/15 px-3 py-1">🏷 {recipe.category?.name}</span>
             </div>
           </div>
         </div>
 
-        {/* quick actions + ukratko */}
         <div className="p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-700">
-              <span className="font-medium">Ukratko:</span> {recipe.short}
+              <span className="font-medium">Ukratko:</span> {recipe.short ? recipe.short : recipe.description}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -149,9 +185,7 @@ export default function RecipeDetailsPage() {
                   disabled={locked}
                   className={[
                     "rounded-full px-4 py-2 text-sm font-semibold transition",
-                    locked
-                      ? "cursor-not-allowed bg-gray-200 text-gray-500"
-                      : "bg-amber-500 text-white hover:bg-amber-600",
+                    locked ? "cursor-not-allowed bg-gray-200 text-gray-500" : "bg-amber-500 text-white hover:bg-amber-600",
                   ].join(" ")}
                 >
                   Dodaj u korpu
@@ -168,13 +202,10 @@ export default function RecipeDetailsPage() {
         </div>
       </div>
 
-      {/* PREMIUM LOCK */}
       {locked ? (
         <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Premium sadržaj</h2>
-          <p className="mt-2 text-gray-700">
-            Ovaj recept je premium. Kupi da bi video/la opis, sastojke i pripremu.
-          </p>
+          <p className="mt-2 text-gray-700">Ovaj recept je premium. Kupi da bi video/la opis, sastojke i pripremu.</p>
 
           <button
             onClick={buyPremium}
@@ -189,13 +220,11 @@ export default function RecipeDetailsPage() {
         </div>
       ) : (
         <>
-          {/* OPIS */}
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Opis</h2>
             <p className="mt-2 text-gray-700 leading-relaxed">{recipe.description}</p>
           </div>
 
-          {/* SASTOJCI */}
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-semibold">Sastojci</h2>
@@ -209,13 +238,12 @@ export default function RecipeDetailsPage() {
             </div>
 
             <ul className="mt-4 space-y-2">
-              {recipe.ingredients.map((ing, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-3 rounded-2xl bg-amber-50/60 px-4 py-3 text-sm text-gray-800"
-                >
+              {(recipe.ingredients ?? []).map((x: any, idx: number) => (
+                <li key={idx} className="flex items-start gap-3 rounded-2xl bg-amber-50/60 px-4 py-3 text-sm text-gray-800">
                   <span className="mt-0.5">✅</span>
-                  <span>{ing}</span>
+                  <span>
+                    {x.ingredient?.name} — {x.quantity} {x.unit}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -226,25 +254,21 @@ export default function RecipeDetailsPage() {
             </div>
           </div>
 
-          {/* PRIPREMA */}
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Priprema</h2>
 
             <ol className="mt-4 space-y-3">
-              {recipe.steps.map((step, idx) => (
+              {(recipe.steps ?? []).map((s: any, idx: number) => (
                 <li key={idx} className="flex gap-3">
                   <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-500 text-xs font-bold text-white">
                     {idx + 1}
                   </div>
-                  <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-800">
-                    {step}
-                  </div>
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-800">{s.text}</div>
                 </li>
               ))}
             </ol>
           </div>
 
-          {/* REVIEWS */}
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <ReviewsSection recipeId={recipe.id} />
           </div>

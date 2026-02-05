@@ -45,7 +45,7 @@ export default function NewRecipePage() {
   }
 
   function parseIngredients() {
-    
+
     return ingredientsText
       .split("\n")
       .map((l) => l.trim())
@@ -114,7 +114,10 @@ export default function NewRecipePage() {
       return;
     }
 
-    router.push("/kuvar/recipes");
+    router.refresh();
+    if (data?.isPublished) router.push("/");
+    else router.push("/kuvar/recipes");
+
   }
 
   return (
