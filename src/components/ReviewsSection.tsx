@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-client";
 
 type ReviewDto = {
   id: string;
@@ -47,6 +48,9 @@ function StarPicker({
 }
 
 export default function ReviewsSection({ recipeId }: { recipeId: string }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +89,6 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
 
   useEffect(() => {
     load();
-   
   }, [recipeId]);
 
   async function submit() {
@@ -94,10 +97,6 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
 
     if (!rating) {
       setErr("Nedostaje ocena (klikni na zvezdice).");
-      return;
-    }
-    if (rating < 1 || rating > 5) {
-      setErr("Uneta ocena nije validna.");
       return;
     }
 
@@ -111,19 +110,13 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
       });
 
       const text = await res.text();
-
-      console.log("REVIEWS POST STATUS:", res.status);
-      console.log("REVIEWS POST BODY:", text);
-
       let data: any = null;
       try {
         data = text ? JSON.parse(text) : null;
-      } catch {
-        data = null;
-      }
+      } catch {}
 
       if (!res.ok) {
-        setErr(data?.error ?? text ?? "Sistem trenutno ne može da sačuva recenziju.");
+        setErr(data?.error ?? text ?? "Ne mogu da sačuvam recenziju.");
         return;
       }
 
@@ -132,16 +125,31 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
       setComment("");
       await load();
     } catch (e: any) {
-      setErr(e?.message ?? String(e) ?? "Network error");
+      setErr(e?.message ?? "Network error");
     } finally {
       setSaving(false);
     }
   }
 
+  async function deleteReview(reviewId: string) {
+    if (!confirm("Da li ste sigurni da želite da obrišete recenziju?")) return;
+
+    const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      alert("Brisanje recenzije nije uspelo.");
+      return;
+    }
+
+    await load();
+  }
+
   const avg =
     reviews.length === 0
       ? 0
-      : reviews.reduce((acc, r) => acc + (r.rating ?? 0), 0) / reviews.length;
+      : reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
 
   return (
     <section className="mt-10 space-y-4">
@@ -152,31 +160,33 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white p-4 space-y-3">
-        <div className="font-medium">Ostavi recenziju</div>
+      {!isAdmin && (
+        <div className="rounded-lg border bg-white p-4 space-y-3">
+          <div className="font-medium">Ostavi recenziju</div>
 
-        <StarPicker value={rating} onChange={setRating} />
+          <StarPicker value={rating} onChange={setRating} />
 
-        <textarea
-          className="w-full rounded border p-2"
-          rows={3}
-          placeholder="Komentar (opciono)"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-        />
+          <textarea
+            className="w-full rounded border p-2"
+            rows={3}
+            placeholder="Komentar (opciono)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
 
-        <button
-          type="button"
-          onClick={submit}
-          disabled={saving}
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          {saving ? "Čuvam..." : "Pošalji recenziju"}
-        </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving}
+            className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          >
+            {saving ? "Čuvam..." : "Pošalji recenziju"}
+          </button>
 
-        {msg && <div className="text-sm text-green-700">{msg}</div>}
-        {err && <div className="text-sm text-red-700">{err}</div>}
-      </div>
+          {msg && <div className="text-sm text-green-700">{msg}</div>}
+          {err && <div className="text-sm text-red-700">{err}</div>}
+        </div>
+      )}
 
       {loading ? (
         <div>Učitavam...</div>
@@ -189,9 +199,21 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
           {reviews.map((r) => (
             <div key={r.id} className="rounded-lg border bg-white p-4">
               <div className="flex items-center justify-between">
-                <div className="font-medium">{r.user.name ?? r.user.email}</div>
-                <div className="text-sm">
+                <div className="font-medium">
+                  {r.user.name ?? r.user.email}
+                </div>
+
+                <div className="flex items-center gap-3">
                   <Stars value={r.rating} />
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => deleteReview(r.id)}
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      Obriši
+                    </button>
+                  )}
                 </div>
               </div>
 
