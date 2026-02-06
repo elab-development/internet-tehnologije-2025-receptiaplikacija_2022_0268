@@ -17,6 +17,7 @@ export default function RecipeDetailsPage() {
 
   const auth = useAuth();
   const user = auth?.user ?? null;
+  const isChefOrAdmin = user?.role === "KUVAR" || user?.role === "ADMIN";
   const loadingAuth = auth?.loading ?? false;
 
   const params = useParams() as any;
@@ -73,7 +74,7 @@ export default function RecipeDetailsPage() {
   }, [id]);
 
   const toggleFavorite = () => {
-    
+
     if (loadingAuth) return;
     if (!user?.id) {
       router.push(`/login?next=${encodeURIComponent(pathname)}`);
@@ -88,7 +89,7 @@ export default function RecipeDetailsPage() {
   };
 
   const buyPremium = async () => {
-  
+
     if (loadingAuth) return;
     if (!user?.id) {
       router.push(`/login?next=${encodeURIComponent(pathname)}`);
@@ -172,7 +173,7 @@ export default function RecipeDetailsPage() {
       <div className="mt-5 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="relative h-64 w-full bg-gradient-to-br from-amber-100 to-rose-100">
           {imageUrl ? (
-            
+
             <img src={imageUrl} alt={recipe.title} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-5xl">🍲</div>
@@ -241,7 +242,7 @@ export default function RecipeDetailsPage() {
         </div>
       </div>
 
-      {locked ? (
+      {locked && !isChefOrAdmin ? (
         <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Premium sadržaj</h2>
           <p className="mt-2 text-gray-700">Ovaj recept je premium. Kupi da bi video/la opis, sastojke i pripremu.</p>
@@ -258,6 +259,8 @@ export default function RecipeDetailsPage() {
           </div>
         </div>
       ) : (
+
+
         <>
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Opis</h2>

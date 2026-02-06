@@ -10,7 +10,6 @@ type MeUser = {
   id: string;
   email: string;
   role: "KUPAC" | "KUVAR" | "ADMIN";
-  isPremium: boolean;
   name: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -77,15 +76,15 @@ export default function ProfilePage() {
         return;
       }
 
-      const data = await res.json();
-      const u: MeUser = data.user;
+      const data = await res.json().catch(() => null);
+      const u: MeUser = data?.user;
 
       setMe(u);
       setForm({
-        name: u.name ?? "",
-        firstName: u.firstName ?? "",
-        lastName: u.lastName ?? "",
-        phone: u.phone ?? "",
+        name: u?.name ?? "",
+        firstName: u?.firstName ?? "",
+        lastName: u?.lastName ?? "",
+        phone: u?.phone ?? "",
       });
 
       setLoadingMe(false);
@@ -139,8 +138,8 @@ export default function ProfilePage() {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setMe(data.user);
+      const data = await res.json().catch(() => null);
+      setMe(data?.user ?? null);
       setMsg("Sačuvano.");
     } else {
       const data = await res.json().catch(() => null);
@@ -203,21 +202,14 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {}
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        {}
+        {/* ACCOUNT */}
         <section className="rounded-3xl border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Podaci naloga</h2>
               <p className="mt-1 text-sm text-gray-600">Ažuriraj osnovne podatke naloga.</p>
             </div>
-
-            {me?.isPremium ? (
-              <span className="w-fit rounded-full bg-amber-100/80 px-3 py-1 text-xs font-semibold text-amber-900">
-                ⭐ Premium korisnik
-              </span>
-            ) : null}
           </div>
 
           <div className="mt-6">
@@ -227,7 +219,7 @@ export default function ProfilePage() {
               <div className="rounded-2xl border bg-amber-50 px-4 py-3 text-sm text-gray-800">Nisi ulogovana.</div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
-                {}
+                {/* LEFT */}
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-800">
                     <div className="flex items-center justify-between">
@@ -240,13 +232,6 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Uloga</span>
                       <span className="font-semibold">{roleLabel(me.role)}</span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Premium</span>
-                      <span className="font-semibold">{me.isPremium ? "Da" : "Ne"}</span>
                     </div>
                   </div>
 
@@ -275,27 +260,23 @@ export default function ProfilePage() {
                     />
                   </label>
 
-                  {}
-                  <div className="grid gap-4">
-                    <label className="grid gap-1">
-                      <span className="text-sm text-gray-600">Ime</span>
-                      <input
-                        className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
-                        value={form.firstName}
-                        onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
-                      />
-                    </label>
+                  <label className="grid gap-1">
+                    <span className="text-sm text-gray-600">Ime</span>
+                    <input
+                      className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                      value={form.firstName}
+                      onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
+                    />
+                  </label>
 
-                    <label className="grid gap-1">
-                      <span className="text-sm text-gray-600">Prezime</span>
-                      <input
-                        className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
-                        value={form.lastName}
-                        onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
-                      />
-                    </label>
-                  </div>
-                  {}
+                  <label className="grid gap-1">
+                    <span className="text-sm text-gray-600">Prezime</span>
+                    <input
+                      className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
+                      value={form.lastName}
+                      onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
+                    />
+                  </label>
 
                   <div className="pt-2">
                     <button
@@ -317,7 +298,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {}
+        {/* PASSWORD */}
         <section className="rounded-3xl border bg-white p-6 shadow-sm">
           <div>
             <h2 className="text-xl font-semibold">Promena lozinke</h2>
@@ -361,7 +342,7 @@ export default function ProfilePage() {
         </section>
       </div>
 
-      {}
+      {/* ORDERS */}
       <section className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -403,9 +384,7 @@ export default function ProfilePage() {
                         </span>
                       </div>
 
-                      <div className="mt-1 text-sm text-gray-600">
-                        {new Date(o.createdAt).toLocaleString("sr-RS")}
-                      </div>
+                      <div className="mt-1 text-sm text-gray-600">{new Date(o.createdAt).toLocaleString("sr-RS")}</div>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -428,7 +407,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {}
+      {/* FAVORITES */}
       <section className="mt-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Omiljeni</h2>
@@ -479,10 +458,7 @@ export default function ProfilePage() {
                     ⏱ {r.timeMin} min
                   </span>
 
-                  <Link
-                    href={`/recipes/${encodeURIComponent(r.id)}`}
-                    className="text-sm font-semibold text-gray-900 hover:underline"
-                  >
+                  <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="text-sm font-semibold text-gray-900 hover:underline">
                     Detalji →
                   </Link>
                 </div>

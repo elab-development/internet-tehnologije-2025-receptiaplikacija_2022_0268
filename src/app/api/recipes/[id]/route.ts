@@ -85,6 +85,10 @@ export async function GET(
       });
     }
 
+    if (user.role === "KUVAR" || user.role === "ADMIN") {
+      return NextResponse.json({ ok: true, locked: false, recipe });
+    }
+
     const bought = await prisma.recipePurchase.findUnique({
       where: { userId_recipeId: { userId: user.id, recipeId: recipe.id } },
       select: { id: true },

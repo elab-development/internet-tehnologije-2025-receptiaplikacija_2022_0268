@@ -10,7 +10,6 @@ type MeUser = {
   id: string;
   email: string;
   role: "KUPAC" | "KUVAR" | "ADMIN";
-  isPremium: boolean;
   name: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -145,11 +144,7 @@ export default function ProfilePage() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Podaci naloga</h2>
 
-          {me?.isPremium && (
-            <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
-              ⭐ Premium korisnik
-            </span>
-          )}
+          
         </div>
 
         {loadingMe ? (
@@ -165,9 +160,7 @@ export default function ProfilePage() {
               <p>
                 <span className="font-medium">Uloga:</span> {me.role}
               </p>
-              <p>
-                <span className="font-medium">Premium:</span> {me.isPremium ? "Da" : "Ne"}
-              </p>
+              
             </div>
 
             <div className="grid gap-4">

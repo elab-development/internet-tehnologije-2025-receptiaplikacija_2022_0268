@@ -19,7 +19,6 @@ model User {
   firstName    String?
   lastName     String?
   phone        String?          @unique
-  isPremium    Boolean          @default(false)
   cart         Cart?
   favorites    Favorite[]
   orders       Order[]
