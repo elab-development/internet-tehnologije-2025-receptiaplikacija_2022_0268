@@ -180,7 +180,7 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      {}
+      {/* HEADER */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Profil</h1>
@@ -224,9 +224,7 @@ export default function ProfilePage() {
             {loadingMe ? (
               <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700">Učitavanje...</div>
             ) : !me ? (
-              <div className="rounded-2xl border bg-amber-50 px-4 py-3 text-sm text-gray-800">
-                Nisi ulogovana.
-              </div>
+              <div className="rounded-2xl border bg-amber-50 px-4 py-3 text-sm text-gray-800">Nisi ulogovana.</div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
                 {}
@@ -253,13 +251,11 @@ export default function ProfilePage() {
                   </div>
 
                   {msg && (
-                    <div className="rounded-2xl border bg-white px-4 py-3 text-sm text-gray-800">
-                      {msg}
-                    </div>
+                    <div className="rounded-2xl border bg-white px-4 py-3 text-sm text-gray-800">{msg}</div>
                   )}
                 </div>
 
-                {}
+                {/* RIGHT */}
                 <div className="grid gap-4">
                   <label className="grid gap-1">
                     <span className="text-sm text-gray-600">Korisničko ime</span>
@@ -279,7 +275,8 @@ export default function ProfilePage() {
                     />
                   </label>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  {}
+                  <div className="grid gap-4">
                     <label className="grid gap-1">
                       <span className="text-sm text-gray-600">Ime</span>
                       <input
@@ -298,6 +295,7 @@ export default function ProfilePage() {
                       />
                     </label>
                   </div>
+                  {}
 
                   <div className="pt-2">
                     <button
@@ -443,9 +441,7 @@ export default function ProfilePage() {
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-2xl">❤️</div>
               <div>
                 <div className="font-semibold">Nema omiljenih recepata</div>
-                <div className="mt-1 text-sm text-gray-600">
-                  Idi na recepte i klikni 🤍 da dodaš omiljene.
-                </div>
+                <div className="mt-1 text-sm text-gray-600">Idi na recepte i klikni 🤍 da dodaš omiljene.</div>
                 <div className="mt-4">
                   <Link
                     href="/recipes"
@@ -460,7 +456,10 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {favoriteRecipes.map((r) => (
-              <div key={r.id} className="rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div
+                key={r.id}
+                className="rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="min-w-0 truncate text-lg font-semibold">{r.title}</h3>
 

@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import ReviewsSection from "@/components/ReviewsSection";
 import NutritionSearch from "@/components/NutritionSearch";
+import { useAuth } from "@/lib/auth-client";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
 
 export default function RecipeDetailsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const loadingAuth = auth?.loading ?? false;
+
   const params = useParams() as any;
 
   const rawParam =
@@ -65,6 +73,13 @@ export default function RecipeDetailsPage() {
   }, [id]);
 
   const toggleFavorite = () => {
+    
+    if (loadingAuth) return;
+    if (!user?.id) {
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setFavorites((prev) => {
       const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
@@ -73,31 +88,37 @@ export default function RecipeDetailsPage() {
   };
 
   const buyPremium = async () => {
-  const res = await fetch(`/api/recipes/${encodeURIComponent(id)}/purchase`, {
-    method: "POST",
-  });
-  const data = await res.json().catch(() => null);
+  
+    if (loadingAuth) return;
+    if (!user?.id) {
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
 
-  if (!res.ok || !data?.ok) {
-    alert(data?.error ?? "Ne mogu da kupim premium recept.");
-    return;
-  }
+    const res = await fetch(`/api/recipes/${encodeURIComponent(id)}/purchase`, {
+      method: "POST",
+    });
+    const data = await res.json().catch(() => null);
 
-  setPurchased((prev) => {
-    if (prev.includes(id)) return prev;
-    const updated = [...prev, id];
-    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(updated));
-    return updated;
-  });
+    if (!res.ok || !data?.ok) {
+      alert(data?.error ?? "Ne mogu da kupim premium recept.");
+      return;
+    }
 
-  const r2 = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
-  const d2 = await r2.json().catch(() => null);
-  if (r2.ok && d2?.ok && d2?.recipe) {
-    setRecipe(d2.recipe);
-    setLocked(Boolean(d2.locked));
-  }
-};
+    setPurchased((prev) => {
+      if (prev.includes(id)) return prev;
+      const updated = [...prev, id];
+      localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(updated));
+      return updated;
+    });
 
+    const r2 = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+    const d2 = await r2.json().catch(() => null);
+    if (r2.ok && d2?.ok && d2?.recipe) {
+      setRecipe(d2.recipe);
+      setLocked(Boolean(d2.locked));
+    }
+  };
 
   if (loading) {
     return (
@@ -123,7 +144,6 @@ export default function RecipeDetailsPage() {
   }
 
   const isFav = favorites.includes(id);
-  const isBought = purchased.includes(id);
 
   const priceRsd = recipe.isPremium ? Number(recipe.priceRSD ?? 0) : 0;
   const imageUrl = recipe.imageUrl ?? null;
@@ -152,6 +172,7 @@ export default function RecipeDetailsPage() {
       <div className="mt-5 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="relative h-64 w-full bg-gradient-to-br from-amber-100 to-rose-100">
           {imageUrl ? (
+            
             <img src={imageUrl} alt={recipe.title} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-5xl">🍲</div>
@@ -175,7 +196,7 @@ export default function RecipeDetailsPage() {
           <button
             onClick={toggleFavorite}
             className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/90 shadow hover:bg-white transition"
-            title="Omiljeni"
+            title={!user?.id ? "Prijavi se da dodaš u omiljene" : "Omiljeni"}
           >
             {isFav ? "❤️" : "🤍"}
           </button>

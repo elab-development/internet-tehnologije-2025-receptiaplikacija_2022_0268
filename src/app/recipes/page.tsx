@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-client";
 
 type RecipeRow = {
   id: string;
@@ -18,6 +20,13 @@ type RecipeRow = {
 const FAV_LS_KEY = "favoriteRecipeIds";
 
 export default function RecipesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+  const loadingAuth = auth?.loading ?? false;
+
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("SVE");
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -51,6 +60,13 @@ export default function RecipesPage() {
   }, []);
 
   const toggleFavorite = (id: string) => {
+ 
+    if (loadingAuth) return;
+    if (!user?.id) {
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setFavorites((prev) => {
       const updated = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       localStorage.setItem(FAV_LS_KEY, JSON.stringify(updated));
@@ -83,7 +99,6 @@ export default function RecipesPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight">Recepti</h1>
@@ -92,7 +107,6 @@ export default function RecipesPage() {
           </p>
         </div>
 
-        {}
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <input
             value={q}
@@ -115,14 +129,12 @@ export default function RecipesPage() {
         </div>
       </div>
 
-      {}
       {err && (
         <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {err}
         </div>
       )}
 
-      {}
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r) => {
           const isFav = favorites.includes(r.id);
@@ -133,36 +145,31 @@ export default function RecipesPage() {
               key={r.id}
               className="group overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
-              {}
               <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="block">
                 <div className="relative h-48 w-full bg-gradient-to-br from-amber-100 to-rose-100">
                   {r.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={r.imageUrl}
                       alt={r.title}
                       className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-4xl">
-                      🍲
-                    </div>
+                    <div className="flex h-full items-center justify-center text-4xl">🍲</div>
                   )}
 
-                  {}
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
 
-                  {}
                   {r.isPremium && (
                     <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-amber-900 shadow">
                       ⭐ Premium • {Number(r.priceRSD ?? 0)} RSD
                     </div>
                   )}
 
-                  {}
                   <button
                     type="button"
                     className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow hover:bg-white transition"
-                    title="Omiljeni"
+                    title={!user?.id ? "Prijavi se da dodaš u omiljene" : "Omiljeni"}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -174,17 +181,12 @@ export default function RecipesPage() {
                 </div>
               </Link>
 
-              {}
               <div className="p-5">
                 <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="block">
-                  <h2 className="text-lg font-semibold leading-snug tracking-tight">
-                    {r.title}
-                  </h2>
+                  <h2 className="text-lg font-semibold leading-snug tracking-tight">{r.title}</h2>
                 </Link>
 
-                <p className="mt-2 line-clamp-3 text-sm text-gray-700">
-                  {r.description}
-                </p>
+                <p className="mt-2 line-clamp-3 text-sm text-gray-700">{r.description}</p>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-800">
                   <span className="rounded-full bg-amber-100/70 px-3 py-1">
@@ -193,9 +195,7 @@ export default function RecipesPage() {
                   <span className="rounded-full bg-amber-100/70 px-3 py-1">
                     ⚡ Težina: {r.difficulty}
                   </span>
-                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
-                    🏷 {catName}
-                  </span>
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">🏷 {catName}</span>
                 </div>
               </div>
             </div>
@@ -203,7 +203,6 @@ export default function RecipesPage() {
         })}
       </div>
 
-      {}
       {filtered.length === 0 && !err && (
         <div className="mt-10 rounded-3xl border bg-white p-8 text-center shadow-sm">
           <p className="text-gray-700">Nema rezultata za ovu pretragu.</p>
@@ -221,3 +220,4 @@ export default function RecipesPage() {
     </main>
   );
 }
+    
