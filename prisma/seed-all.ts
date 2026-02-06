@@ -462,7 +462,6 @@ async function seedRecipes() {
       passwordHash: "seed",
       role: Role.KUVAR,
       isBlocked: false,
-      isPremium: true,
     },
     select: { id: true },
   });
