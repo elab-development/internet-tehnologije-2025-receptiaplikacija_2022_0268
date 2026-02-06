@@ -1,11 +1,5 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main style={{ padding: '40px' }}>
-      <h1>Recepti aplikacija</h1>
-      <p>Dobrodošli u veb prodavnicu sa receptima i sastojcima.</p>
-    </main>
-  );
+  redirect("/recipes");
 }
-
