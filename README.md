@@ -66,7 +66,7 @@ Pokretanje aplikacije – Docker
 
 2.	U drugom terminalu pokrenuti migracije: docker compose exec web npx prisma migrate deploy
 
-Aplikacija će biti dostupna na adresi:
+Aplikacija će gbiti dostupna na adresi:
 
 http://localhost:3000
 
@@ -77,3 +77,8 @@ Za gašenje kontejnera koristiti: docker compose down
 Napomena
 
 Za rad aplikacije neophodno je da je PostgreSQL baza pokrenuta (lokalno ili u Docker kontejneru, u zavisnosti od načina pokretanja).
+
+## Development grana
+
+Ova grana služi za razvoj i integraciju novih funkcionalnosti pre spajanja u main granu. 
+Sve izmene i nove funkcionalnosti se prvo razvijaju i testiraju u develop grani.
