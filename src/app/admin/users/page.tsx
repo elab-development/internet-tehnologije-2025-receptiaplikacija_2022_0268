@@ -11,7 +11,6 @@ type AdminUserRow = {
   phone: string | null;
   role: "KUPAC" | "KUVAR" | "ADMIN";
   isBlocked: boolean;
-  isPremium: boolean;
   createdAt: string;
 };
 
@@ -99,7 +98,6 @@ export default async function AdminUsersPage() {
                   <td className="px-3 py-2">{u.email}</td>
                   <td className="px-3 py-2">{displayName}</td>
                   <td className="px-3 py-2">{u.role}</td>
-                  <td className="px-3 py-2">{u.isPremium ? "DA" : "NE"}</td>
                   <td className="px-3 py-2">{u.isBlocked ? "DA" : "NE"}</td>
 
                   <td className="px-3 py-2">

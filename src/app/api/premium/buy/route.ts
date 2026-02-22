@@ -14,7 +14,7 @@ export async function POST() {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, isBlocked: true, isPremium: true },
+    select: { id: true, isBlocked: true},
   });
 
   if (!user || user.isBlocked) {
@@ -24,14 +24,7 @@ export async function POST() {
     );
   }
 
-  if (user.isPremium) {
-    return NextResponse.json({ ok: true, already: true });
-  }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { isPremium: true },
-  });
-
+ 
   return NextResponse.json({ ok: true });
 }

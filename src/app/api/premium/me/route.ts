@@ -4,14 +4,14 @@ import { getSession } from "@/lib/session";
 
 export async function GET() {
   const userId = await getSession();
-  if (!userId) return NextResponse.json({ ok: true, isPremium: false });
+  if (!userId) return NextResponse.json({ ok: true });
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isPremium: true, isBlocked: true },
+    select: {  isBlocked: true },
   });
 
-  if (!user || user.isBlocked) return NextResponse.json({ ok: true, isPremium: false });
+  if (!user || user.isBlocked) return NextResponse.json({ ok: true });
 
-  return NextResponse.json({ ok: true, isPremium: user.isPremium });
+
 }

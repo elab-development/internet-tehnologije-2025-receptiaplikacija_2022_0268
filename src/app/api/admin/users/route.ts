@@ -24,7 +24,6 @@ export async function GET() {
       phone: true,
       role: true,
       isBlocked: true,
-      isPremium: true,
       createdAt: true,
       updatedAt: true,
     },

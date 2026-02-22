@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:17
+    container_name: recepti-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: UzickaGimnazija13.
+      POSTGRES_DB: recepti
+    ports:
+      - "5432:5432"
+    volumes:
+      - recepti_pgdata:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: recepti-web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    depends_on:
+      - db
+
+volumes:
+  recepti_pgdata:

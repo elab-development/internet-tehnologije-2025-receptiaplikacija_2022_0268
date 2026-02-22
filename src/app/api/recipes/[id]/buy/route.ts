@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
@@ -13,7 +13,10 @@ async function getUserId() {
 
   const session = await prisma.session.findUnique({
     where: { token },
-    select: { expiresAt: true, user: { select: { id: true, isBlocked: true, role: true } } },
+    select: {
+      expiresAt: true,
+      user: { select: { id: true, isBlocked: true, role: true } },
+    },
   });
 
   if (!session) return null;
@@ -24,12 +27,19 @@ async function getUserId() {
   return session.user.id;
 }
 
-export async function POST(_req: Request, ctx: { params: { id: string } }) {
-  const recipeId = decodeURIComponent(ctx.params.id);
+export async function POST(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
+  const recipeId = decodeURIComponent(id);
 
   const userId = await getUserId();
   if (!userId) {
-    return NextResponse.json({ ok: false, error: "Moraš biti ulogovana kao kupac." }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Moraš biti ulogovana kao kupac." },
+      { status: 401 }
+    );
   }
 
   const recipe = await prisma.recipe.findUnique({
@@ -38,11 +48,17 @@ export async function POST(_req: Request, ctx: { params: { id: string } }) {
   });
 
   if (!recipe) {
-    return NextResponse.json({ ok: false, error: "Recept nije pronađen." }, { status: 404 });
+    return NextResponse.json(
+      { ok: false, error: "Recept nije pronađen." },
+      { status: 404 }
+    );
   }
 
   if (!recipe.isPremium) {
-    return NextResponse.json({ ok: false, error: "Ovaj recept nije premium." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Ovaj recept nije premium." },
+      { status: 400 }
+    );
   }
 
   const price = Number(recipe.priceRSD ?? 0);
@@ -57,6 +73,8 @@ export async function POST(_req: Request, ctx: { params: { id: string } }) {
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: false, error: "Koristi POST." }, { status: 405 });
+  return NextResponse.json(
+    { ok: false, error: "Koristi POST." },
+    { status: 405 }
+  );
 }
-

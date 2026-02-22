@@ -1,9 +1,10 @@
-"use client";
+  "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
+import MealOfDayCard from "./MealOfDayCard";
 
 type RecipeRow = {
   id: string;
@@ -60,7 +61,6 @@ export default function RecipesPage() {
   }, []);
 
   const toggleFavorite = (id: string) => {
- 
     if (loadingAuth) return;
     if (!user?.id) {
       router.push(`/login?next=${encodeURIComponent(pathname)}`);
@@ -99,7 +99,10 @@ export default function RecipesPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* Predlog dana iz eksternog API-ja */}
+      <MealOfDayCard />
+
+      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight">Recepti</h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -189,12 +192,8 @@ export default function RecipesPage() {
                 <p className="mt-2 line-clamp-3 text-sm text-gray-700">{r.description}</p>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-800">
-                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
-                    ⏱ {r.prepTimeMinutes} min
-                  </span>
-                  <span className="rounded-full bg-amber-100/70 px-3 py-1">
-                    ⚡ Težina: {r.difficulty}
-                  </span>
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">⏱ {r.prepTimeMinutes} min</span>
+                  <span className="rounded-full bg-amber-100/70 px-3 py-1">⚡ Težina: {r.difficulty}</span>
                   <span className="rounded-full bg-amber-100/70 px-3 py-1">🏷 {catName}</span>
                 </div>
               </div>
@@ -220,4 +219,3 @@ export default function RecipesPage() {
     </main>
   );
 }
-    

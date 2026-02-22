@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 import SastojciClient from "./SastojciClient";
@@ -46,8 +49,7 @@ export default async function SastojciPage() {
     <main className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          
-  <h1 className="text-4xl font-bold tracking-tight">Sastojci</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Sastojci</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -67,7 +69,6 @@ export default async function SastojciPage() {
         </div>
       </div>
 
-      {}
       <SastojciClient groups={groups} />
     </main>
   );

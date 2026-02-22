@@ -6,9 +6,11 @@ import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "session";
 
+
 async function getCurrentUserLite() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // ✅ OBAVEZNO await
   const token = cookieStore.get(SESSION_COOKIE)?.value;
+
   if (!token) return null;
 
   const session = await prisma.session.findUnique({
@@ -37,9 +39,7 @@ export async function GET() {
         : { isPublished: true };
 
     const recipes = await prisma.recipe.findMany({
-      where: {
-        isPublished: true,
-      },
+      where,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -54,9 +54,8 @@ export async function GET() {
       },
     });
 
-
     return NextResponse.json({ ok: true, recipes });
-  } catch {
+  } catch (e) {
     return NextResponse.json(
       { ok: false, error: "Ne mogu da učitam recepte." },
       { status: 500 }
@@ -67,9 +66,19 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const me = await getCurrentUserLite();
-    if (!me) return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
+
+    if (!me) {
+      return NextResponse.json(
+        { ok: false, error: "NO_SESSION" },
+        { status: 401 }
+      );
+    }
+
     if (!(me.role === "KUVAR" || me.role === "ADMIN")) {
-      return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+      return NextResponse.json(
+        { ok: false, error: "FORBIDDEN" },
+        { status: 403 }
+      );
     }
 
     const body = await req.json().catch(() => ({}));
@@ -86,20 +95,37 @@ export async function POST(req: Request) {
     const categoryId = String(body.categoryId ?? "").trim();
     const isPublished = Boolean(body.isPublished ?? false);
 
-    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : [];
+    const ingredients = Array.isArray(body.ingredients)
+      ? body.ingredients
+      : [];
     const steps = Array.isArray(body.steps) ? body.steps : [];
 
     if (!title || !description || !categoryId) {
-      return NextResponse.json({ ok: false, error: "INVALID_INPUT" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "INVALID_INPUT" },
+        { status: 400 }
+      );
     }
+
     if (!Number.isFinite(prepTimeMinutes) || prepTimeMinutes <= 0) {
-      return NextResponse.json({ ok: false, error: "INVALID_TIME" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "INVALID_TIME" },
+        { status: 400 }
+      );
     }
+
     if (!Number.isFinite(difficulty) || difficulty <= 0) {
-      return NextResponse.json({ ok: false, error: "INVALID_DIFFICULTY" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "INVALID_DIFFICULTY" },
+        { status: 400 }
+      );
     }
+
     if (isPremium && (!Number.isFinite(priceRSD) || priceRSD <= 0)) {
-      return NextResponse.json({ ok: false, error: "PRICE_REQUIRED" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "PRICE_REQUIRED" },
+        { status: 400 }
+      );
     }
 
     const created = await prisma.recipe.create({
@@ -149,13 +175,22 @@ export async function POST(req: Request) {
             })
             .filter(Boolean) as any,
         },
-
       },
       select: { id: true, isPublished: true },
     });
 
-    return NextResponse.json({ ok: true, recipeId: created.id, isPublished: created.isPublished }, { status: 201 });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Ne mogu da kreiram recept." }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: true,
+        recipeId: created.id,
+        isPublished: created.isPublished,
+      },
+      { status: 201 }
+    );
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: "Ne mogu da kreiram recept." },
+      { status: 500 }
+    );
   }
 }
