@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Recepti Aplikacija
 
-## Getting Started
+Recepti Aplikacija je web aplikacija razvijena u Next.js okruženju koja omogućava korisnicima pregled, kupovinu i upravljanje receptima i sastojcima. Aplikacija podržava više korisničkih uloga (Kupac, Kuvar, Admin), premium recepte, korpu za sastojke, kao i integraciju sa eksternim API servisima. Projekat je razvijen u okviru predmeta Internet Tehnologije.
 
-First, run the development server:
+⸻
 
-```bash
+Funkcionalnosti aplikacije
+
+Aplikacija omogućava:                                                                     
+	•	Registraciju i prijavu korisnika                                                  
+	•	Različite korisničke uloge (Kupac, Kuvar, Admin)                                  
+	•	Pregled svih objavljenih recepata                                                 
+	•	Pretragu i filtriranje recepata po kategorijama                                   
+	•	Prikaz detalja recepta (opis, sastojci, koraci, recenzije)                        
+	•	Dodavanje recepata u omiljene (samo prijavljeni korisnici)                        
+	•	Ocenjivanje i ostavljanje recenzija (samo prijavljeni korisnici)                  
+	•	Kupovinu premium recepata (samo prijavljeni kupci)                                
+	•	Kupovinu sastojaka i rad sa korpom (samo prijavljeni kupci)                       
+	•	Admin panel za upravljanje korisnicima i receptima                                
+	•	Kuvar panel za kreiranje i upravljanje sopstvenim receptima                       
+
+⸻
+
+Eksterni API servisi                                                                      
+                                                                                          
+Aplikacija koristi dva eksterna API servisa:                                              
+	1.	Meal of the Day (TheMealDB API) – koristi se za prikaz nasumičnog recepta dana na stranici sa receptima.                                                                
+	2.	API za nutritivne vrednosti – omogućava prikaz kalorijskih i nutritivnih vrednosti određenih sastojaka.                                                        
+
+⸻
+
+Tehnologije
+
+U projektu su korišćene sledećih tehnologije:                                             
+	•	Next.js                                                                           
+	•	TypeScript                                                                        
+	•	Prisma ORM                                                                        
+	•	PostgreSQL                                                                        
+	•	Docker i Docker Compose                                                           
+	•	Tailwind CSS                                                                      
+
+⸻
+
+Pokretanje aplikacije – Lokalno (bez Docker-a)
+
+1.	Instalirati zavisnosti:
+npm install
+
+2.	Generisati Prisma klijenta:
+npx prisma generate
+
+3.	Pokrenuti migracije baze:
+npx prisma migrate dev 
+
+4.	Pokrenuti aplikaciju:
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikacija će biti dostupna na adresi:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+⸻
 
-## Learn More
+Pokretanje aplikacije – Docker
+1.	Pokrenuti kontejnere: docker compose up –build
 
-To learn more about Next.js, take a look at the following resources:
+2.	U drugom terminalu pokrenuti migracije: docker compose exec web npx prisma migrate deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Aplikacija će biti dostupna na adresi:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+http://localhost:3000
 
-## Deploy on Vercel
+Za gašenje kontejnera koristiti: docker compose down
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+⸻
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Napomena
+
+Za rad aplikacije neophodno je da je PostgreSQL baza pokrenuta (lokalno ili u Docker kontejneru, u zavisnosti od načina pokretanja).
