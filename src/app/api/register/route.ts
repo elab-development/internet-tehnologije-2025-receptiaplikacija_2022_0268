@@ -4,6 +4,26 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
+/**
+ * @swagger
+ * /api/register:
+ *   post:
+ *     summary: Registracija korisnika
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       201: { description: Uspešna registracija }
+ *       400: { description: Neispravni podaci }
+ */
 
 export async function POST(req: Request) {
   try {
