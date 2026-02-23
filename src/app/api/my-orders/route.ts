@@ -32,6 +32,17 @@ async function getCurrentUser() {
   return session.user;
 }
 
+/**
+ * @swagger
+ * /api/my-orders:
+ *   get:
+ *     summary: Vraća porudžbine ulogovanog korisnika
+ *     tags: [Orders]
+ *     responses:
+ *       200: { description: Lista porudžbina }
+ *       401: { description: Nije prijavljen }
+ */
+
 export async function GET() {
   const user = await getCurrentUser();
 

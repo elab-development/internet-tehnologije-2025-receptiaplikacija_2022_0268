@@ -5,6 +5,27 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Prijava korisnika
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200: { description: Uspešna prijava }
+ *       401: { description: Neispravni kredencijali }
+ */
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const email = body?.email?.toLowerCase?.().trim?.();

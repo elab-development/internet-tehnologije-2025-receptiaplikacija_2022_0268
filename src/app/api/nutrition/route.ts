@@ -13,6 +13,21 @@ function numOrNull(v: unknown): number | null {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : null;
 }
+/**
+ * @swagger
+ * /api/nutrition:
+ *   get:
+ *     summary: Nutritivne vrednosti sastojka (eksterni API)
+ *     tags: [External]
+ *     parameters:
+ *       - in: query
+ *         name: ingredient
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Nutritivne vrednosti }
+ *       400: { description: Nedostaje ingredient parametar }
+ */
 
 export async function GET(req: Request) {
   try {

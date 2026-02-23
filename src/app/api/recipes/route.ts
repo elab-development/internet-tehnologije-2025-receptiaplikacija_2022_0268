@@ -8,7 +8,7 @@ const SESSION_COOKIE = "session";
 
 
 async function getCurrentUserLite() {
-  const cookieStore = await cookies(); // ✅ OBAVEZNO await
+  const cookieStore = await cookies(); 
   const token = cookieStore.get(SESSION_COOKIE)?.value;
 
   if (!token) return null;
@@ -27,6 +27,30 @@ async function getCurrentUserLite() {
 
   return session.user;
 }
+
+/**
+ * @swagger
+ * /api/recipes:
+ *   get:
+ *     summary: Lista recepata (pretraga/filtriranje ako postoji)
+ *     tags: [Recipes]
+ *     responses:
+ *       200: { description: Lista recepata }
+ *   post:
+ *     summary: Kreiranje recepta (kuvar/admin)
+ *     tags: [Recipes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Podaci recepta (title, description, ingredients, steps...)
+ *     responses:
+ *       201: { description: Recept kreiran }
+ *       401: { description: Nije prijavljen }
+ *       403: { description: Nema prava }
+ */
 
 
 export async function GET() {

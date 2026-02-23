@@ -26,6 +26,55 @@ async function getCurrentUserLite() {
   return session.user;
 }
 
+/**
+ * @swagger
+ * /api/recipes/{id}:
+ *   get:
+ *     summary: Detalji recepta
+ *     tags: [Recipes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Detalji recepta }
+ *       404: { description: Recept nije pronađen }
+ *   put:
+ *     summary: Izmena recepta (kuvar/admin)
+ *     tags: [Recipes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Polja za izmenu recepta
+ *     responses:
+ *       200: { description: Recept izmenjen }
+ *       401: { description: Nije prijavljen }
+ *       403: { description: Nema prava }
+ *       404: { description: Nije pronađen }
+ *   delete:
+ *     summary: Brisanje recepta (admin ili vlasnik ako imate)
+ *     tags: [Recipes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Recept obrisan }
+ *       401: { description: Nije prijavljen }
+ *       403: { description: Nema prava }
+ *       404: { description: Nije pronađen }
+ */
+
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> }

@@ -1,6 +1,15 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+/**
+ * @swagger
+ * /api/meal-of-day:
+ *   get:
+ *     summary: Vraća "recept dana" (TheMealDB)
+ *     tags: [External]
+ *     responses:
+ *       200: { description: Recept dana }
+ */
 
 export async function GET() {
   try {
