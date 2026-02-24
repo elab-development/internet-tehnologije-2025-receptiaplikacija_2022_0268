@@ -4,6 +4,36 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { ensureCsrfToken } from "@/lib/csrf";
+
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 10 * 60 * 1000; 
+const attempts = new Map<string, { count: number; resetAt: number }>();
+
+function getIp(req: Request) {
+  const xf = req.headers.get("x-forwarded-for");
+  if (xf) return xf.split(",")[0].trim();
+  return "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const rec = attempts.get(ip);
+  if (!rec || rec.resetAt < now) {
+    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  rec.count += 1;
+  attempts.set(ip, rec);
+  return rec.count > MAX_ATTEMPTS;
+}
+
+function normalizeEmail(v: any) {
+  const s = String(v ?? "").trim().toLowerCase();
+
+  if (!s.includes("@") || s.length > 254) return "";
+  return s;
+}
 
 /**
  * @swagger
@@ -27,9 +57,17 @@ import { randomBytes } from "crypto";
  */
 
 export async function POST(req: Request) {
+  const ip = getIp(req);
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { ok: false, error: "Previše pokušaja. Pokušaj ponovo kasnije." },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
-  const email = body?.email?.toLowerCase?.().trim?.();
-  const password = body?.password;
+  const email = normalizeEmail(body?.email);
+  const password = String(body?.password ?? "");
 
   if (!email || !password) {
     return NextResponse.json(
@@ -39,6 +77,7 @@ export async function POST(req: Request) {
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
+
   if (!user) {
     return NextResponse.json(
       { ok: false, error: "Pogrešan email ili lozinka." },
@@ -64,7 +103,7 @@ export async function POST(req: Request) {
   }
 
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); 
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
 
   await prisma.session.create({
     data: {
@@ -94,6 +133,7 @@ export async function POST(req: Request) {
     maxAge: 60 * 60 * 24 * 7,
   });
 
+  await ensureCsrfToken();
+
   return res;
 }
-

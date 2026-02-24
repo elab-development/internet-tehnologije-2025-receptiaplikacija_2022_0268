@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { apiFetch } from "@/lib/apiFetch";
 
 type PaymentMethod = "CASH_ON_DELIVERY" | "CARD";
 type Kind = "RECIPE" | "INGREDIENT";
 
 export default function CheckoutPage() {
   const router = useRouter();
-
   const { items, totalPriceRsd, clearCart } = useCart() as any;
 
   const [address, setAddress] = useState("");
@@ -54,11 +54,8 @@ export default function CheckoutPage() {
       paymentMethod,
       items: items.map((i: any) => {
         const qty = Number(i.qty ?? i.quantity ?? 1);
-
         const priceRsd = Number(i.priceRsd ?? i.unitPriceRsd ?? 0);
-
         const id = String(i.id ?? "");
-
         const kind = String(i.kind ?? "").toUpperCase() as Kind;
 
         return {
@@ -73,7 +70,7 @@ export default function CheckoutPage() {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/orders", {
+      const res = await apiFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -97,7 +94,7 @@ export default function CheckoutPage() {
 
       router.push(`/orders/${orderId}`);
       router.refresh();
-    } catch (e) {
+    } catch {
       setErr("Greška u mreži. Pokušaj ponovo.");
     } finally {
       setSaving(false);

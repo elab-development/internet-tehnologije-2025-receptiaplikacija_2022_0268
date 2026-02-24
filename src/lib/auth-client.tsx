@@ -7,10 +7,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-
-
-console.log("AUTH CLIENT LOADED");
-console.log("AUTH-CLIENT MODULE LOADED");
+import { apiFetch } from "@/lib/apiFetch";
 
 
 type User = { id: string; email: string; role: string };
@@ -25,14 +22,14 @@ type AuthCtx = {
 const AuthContext = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  console.log("AUTH PROVIDER RENDER");
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/me", { credentials: "include" });
+      const r = await fetch("/api/me", { credentials: "include", cache: "no-store" });
       const data = await r.json().catch(() => null);
       if (r.ok && data?.ok) setUser(data.user);
       else setUser(null);
@@ -42,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    await apiFetch("/api/logout", { method: "POST" });
     setUser(null);
   };
 
@@ -50,7 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refresh();
   }, []);
 
-  const value = useMemo(() => ({ user, loading, refresh, logout }), [user, loading]);
+  const value = useMemo(
+    () => ({ user, loading, refresh, logout }),
+    [user, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -3,9 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -18,37 +19,47 @@ export async function DELETE(
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   try {
-    const review = await prisma.review.findUnique({
-      where: { id },
-      select: { recipeId: true },
+    const ok = await prisma.$transaction(async (tx) => {
+      const review = await tx.review.findUnique({
+        where: { id },
+        select: { recipeId: true },
+      });
+
+      if (!review) return { ok: false as const, status: 404 as const, recipeId: null as any };
+
+      await tx.review.deleteMany({ where: { id } });
+
+      const stats = await tx.review.aggregate({
+        where: { recipeId: review.recipeId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+
+      await tx.recipe.updateMany({
+        where: { id: review.recipeId },
+        data: {
+          avgRating: stats._avg.rating ?? 0,
+          reviewsCount: stats._count.rating,
+        },
+      });
+
+      return { ok: true as const, status: 200 as const, recipeId: review.recipeId };
     });
 
-    if (!review) {
+    if (!ok.ok) {
       return NextResponse.json(
         { ok: false, error: "Recenzija ne postoji." },
-        { status: 404 }
+        { status: ok.status }
       );
     }
 
-    await prisma.review.delete({ where: { id } });
-
-    const stats = await prisma.review.aggregate({
-      where: { recipeId: review.recipeId },
-      _avg: { rating: true },
-      _count: { rating: true },
-    });
-
-    await prisma.recipe.update({
-      where: { id: review.recipeId },
-      data: {
-        avgRating: stats._avg.rating ?? 0,
-        reviewsCount: stats._count.rating,
-      },
-    });
-
     return NextResponse.json({ ok: true });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Greška pri brisanju recenzije." },
       { status: 500 }

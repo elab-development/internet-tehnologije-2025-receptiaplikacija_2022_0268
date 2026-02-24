@@ -102,3 +102,9 @@ Sve izmene i nove funkcionalnosti se prvo razvijaju i testiraju u develop grani.
 ## Vizualizacija podataka
 
 Grafički prikaz broja recepata po kategorijama dostupan je na ruti **/stats** (Google Charts), a podaci se dobijaju preko endpoint-a **/api/stats/recipes-by-category**.
+
+## Produkcioni Deployment (Cloud)
+
+Aplikacija je deployovana na cloud platformi Render kao produkciona verzija sistema.
+Produkcijska verzija dostupna je na adresi:
+https://recepti-app-q6eo.onrender.com

@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyCsrf } from "@/lib/csrf";
 
 const SESSION_COOKIE = "session";
 
@@ -27,12 +28,27 @@ async function getUserId() {
   return session.user.id;
 }
 
+function badRequest(msg: string) {
+  return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+}
+
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   const { id } = await ctx.params;
-  const recipeId = decodeURIComponent(id);
+
+  let recipeId = "";
+  try {
+    recipeId = decodeURIComponent(id).trim();
+  } catch {
+    return badRequest("Neispravan ID recepta.");
+  }
+  if (!recipeId) return badRequest("Neispravan ID recepta.");
 
   const userId = await getUserId();
   if (!userId) {
@@ -44,7 +60,7 @@ export async function POST(
 
   const recipe = await prisma.recipe.findUnique({
     where: { id: recipeId },
-    select: { id: true, isPremium: true, priceRSD: true },
+    select: { id: true, isPremium: true, priceRSD: true, isPublished: true as any },
   });
 
   if (!recipe) {
@@ -54,22 +70,26 @@ export async function POST(
     );
   }
 
+  if ((recipe as any).isPublished === false) {
+    return badRequest("Recept nije dostupan za kupovinu.");
+  }
+
   if (!recipe.isPremium) {
-    return NextResponse.json(
-      { ok: false, error: "Ovaj recept nije premium." },
-      { status: 400 }
-    );
+    return badRequest("Ovaj recept nije premium.");
   }
 
   const price = Number(recipe.priceRSD ?? 0);
+  if (!Number.isFinite(price) || price <= 0) {
+    return badRequest("Premium recept nema validnu cenu.");
+  }
 
   await prisma.recipePurchase.upsert({
     where: { userId_recipeId: { userId, recipeId } },
-    update: {},
+    update: {}, 
     create: { userId, recipeId, priceRsd: price },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }
 
 export async function GET() {

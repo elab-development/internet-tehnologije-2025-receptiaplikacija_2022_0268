@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
 import Link from "next/link";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,11 +20,15 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/login", {
+    const payload = {
+      email: email.trim(),
+      password,
+    };
+
+    const res = await apiFetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json().catch(() => null);
@@ -36,7 +41,6 @@ export default function LoginPage() {
 
     await refresh();
     router.push("/");
-
     setLoading(false);
   };
 
@@ -48,6 +52,7 @@ export default function LoginPage() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
+        autoComplete="email"
         className="w-full border p-2"
       />
 
@@ -56,26 +61,22 @@ export default function LoginPage() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Lozinka"
+        autoComplete="current-password"
         className="w-full border p-2"
       />
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      <button
-        disabled={loading}
-        className="w-full border p-2 hover:bg-gray-50"
-      >
+      <button disabled={loading} className="w-full border p-2 hover:bg-gray-50">
         {loading ? "Prijavljivanje..." : "Prijava"}
       </button>
+
       <p className="text-sm text-center">
         Nemate nalog?{" "}
         <Link href="/registracija" className="text-blue-600 hover:underline">
           Registrujte se
         </Link>
-
       </p>
-
-
     </form>
   );
 }

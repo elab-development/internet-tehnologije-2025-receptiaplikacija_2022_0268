@@ -20,7 +20,14 @@ type Group = {
 
 export default async function SastojciPage() {
   const ingredients = await prisma.ingredient.findMany({
-    include: { category: true },
+    select: {
+      id: true,
+      name: true,
+      defaultUnit: true,
+      defaultQty: true,
+      priceRsd: true,
+      category: { select: { name: true } },
+    },
     orderBy: [{ category: { name: "asc" } }, { name: "asc" }],
   });
 
@@ -28,6 +35,7 @@ export default async function SastojciPage() {
 
   for (const it of ingredients) {
     const catName = it.category?.name ?? "Ostalo";
+
     const item: GroupedItem = {
       id: it.id,
       name: it.name,

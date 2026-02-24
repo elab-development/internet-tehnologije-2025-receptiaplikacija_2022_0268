@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/apiFetch";
 
 type ReviewDto = {
   id: string;
@@ -103,7 +104,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/recipes/${recipeId}/reviews`, {
+      const res = await apiFetch(`/api/recipes/${recipeId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating, comment }),
@@ -134,7 +135,7 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
   async function deleteReview(reviewId: string) {
     if (!confirm("Da li ste sigurni da želite da obrišete recenziju?")) return;
 
-    const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+    const res = await apiFetch(`/api/admin/reviews/${reviewId}`, {
       method: "DELETE",
     });
 
@@ -199,15 +200,14 @@ export default function ReviewsSection({ recipeId }: { recipeId: string }) {
           {reviews.map((r) => (
             <div key={r.id} className="rounded-lg border bg-white p-4">
               <div className="flex items-center justify-between">
-                <div className="font-medium">
-                  {r.user.name ?? r.user.email}
-                </div>
+                <div className="font-medium">{r.user.name ?? r.user.email}</div>
 
                 <div className="flex items-center gap-3">
                   <Stars value={r.rating} />
 
                   {isAdmin && (
                     <button
+                      type="button"
                       onClick={() => deleteReview(r.id)}
                       className="text-xs text-red-600 hover:underline"
                     >

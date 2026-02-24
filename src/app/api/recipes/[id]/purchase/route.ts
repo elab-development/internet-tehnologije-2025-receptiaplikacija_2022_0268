@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyCsrf } from "@/lib/csrf";
 
 const SESSION_COOKIE = "session";
 
@@ -26,8 +27,12 @@ async function getMe() {
   return session.user;
 }
 
+function badRequest(error: string) {
+  return NextResponse.json({ ok: false, error }, { status: 400 });
+}
+
 export async function POST(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -36,19 +41,40 @@ export async function POST(
       return NextResponse.json({ ok: false, error: "NO_SESSION" }, { status: 401 });
     }
 
+    if (!(await verifyCsrf(req))) {
+      return NextResponse.json({ ok: false, error: "CSRF_BLOCKED" }, { status: 403 });
+    }
+
     const { id } = await ctx.params;
-    const recipeId = decodeURIComponent(id ?? "").trim();
+
+    let recipeId = "";
+    try {
+      recipeId = decodeURIComponent(id ?? "").trim();
+    } catch {
+      return badRequest("BAD_ID");
+    }
+    if (!recipeId) return badRequest("BAD_ID");
 
     const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId },
-      select: { id: true, isPremium: true, priceRSD: true },
+      select: { id: true, isPremium: true, priceRSD: true, isPublished: true as any },
     });
 
     if (!recipe) {
       return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
     }
+
+    if ((recipe as any).isPublished === false) {
+      return badRequest("NOT_AVAILABLE");
+    }
+
     if (!recipe.isPremium) {
-      return NextResponse.json({ ok: false, error: "NOT_PREMIUM" }, { status: 400 });
+      return badRequest("NOT_PREMIUM");
+    }
+
+    const price = Number(recipe.priceRSD ?? 0);
+    if (!Number.isFinite(price) || price <= 0) {
+      return badRequest("BAD_PRICE");
     }
 
     await prisma.recipePurchase.upsert({
@@ -57,15 +83,13 @@ export async function POST(
       create: {
         userId: me.id,
         recipeId: recipe.id,
-        priceRsd: recipe.priceRSD ?? 0,
+        priceRsd: price,
       },
     });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: true }, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    console.error("RECIPE_PURCHASE_ERROR", e);
+    return NextResponse.json({ ok: false, error: "SERVER_ERROR" }, { status: 500 });
   }
 }
