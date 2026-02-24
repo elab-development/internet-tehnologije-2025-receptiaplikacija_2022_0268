@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { RECIPES } from "@/lib/recipes";
+import { apiFetch } from "@/lib/apiFetch";
 
 const LS_KEY = "favoriteRecipeIds";
 
@@ -61,7 +62,14 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const saved = localStorage.getItem(LS_KEY);
-    if (saved) setFavorites(JSON.parse(saved));
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setFavorites(parsed.filter((x) => typeof x === "string"));
+        }
+      } catch {}
+    }
   }, []);
 
   useEffect(() => {
@@ -69,7 +77,7 @@ export default function ProfilePage() {
       setLoadingMe(true);
       setMsg(null);
 
-      const res = await fetch("/api/me");
+      const res = await apiFetch("/api/me", { cache: "no-store" });
       if (!res.ok) {
         setMe(null);
         setLoadingMe(false);
@@ -79,7 +87,7 @@ export default function ProfilePage() {
       const data = await res.json().catch(() => null);
       const u: MeUser = data?.user;
 
-      setMe(u);
+      setMe(u ?? null);
       setForm({
         name: u?.name ?? "",
         firstName: u?.firstName ?? "",
@@ -97,7 +105,7 @@ export default function ProfilePage() {
       setOrdersErr(null);
 
       try {
-        const res = await fetch("/api/my-orders", { cache: "no-store" });
+        const res = await apiFetch("/api/my-orders", { cache: "no-store" });
         const data = await res.json().catch(() => null);
 
         if (!res.ok) {
@@ -131,7 +139,7 @@ export default function ProfilePage() {
     setSaving(true);
     setMsg(null);
 
-    const res = await fetch("/api/me", {
+    const res = await apiFetch("/api/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -156,7 +164,7 @@ export default function ProfilePage() {
     setPwdSaving(true);
     setPwdMsg(null);
 
-    const res = await fetch("/api/me/password", {
+    const res = await apiFetch("/api/me/password", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ oldPassword, newPassword }),
@@ -179,7 +187,7 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      {/* HEADER */}
+      
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Profil</h1>
@@ -203,7 +211,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        {/* ACCOUNT */}
+       
         <section className="rounded-3xl border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -219,7 +227,7 @@ export default function ProfilePage() {
               <div className="rounded-2xl border bg-amber-50 px-4 py-3 text-sm text-gray-800">Nisi ulogovana.</div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
-                {/* LEFT */}
+               
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-800">
                     <div className="flex items-center justify-between">
@@ -240,7 +248,6 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* RIGHT */}
                 <div className="grid gap-4">
                   <label className="grid gap-1">
                     <span className="text-sm text-gray-600">Korisničko ime</span>
@@ -298,7 +305,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* PASSWORD */}
         <section className="rounded-3xl border bg-white p-6 shadow-sm">
           <div>
             <h2 className="text-xl font-semibold">Promena lozinke</h2>
@@ -312,6 +318,7 @@ export default function ProfilePage() {
               className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
+              autoComplete="current-password"
             />
 
             <input
@@ -320,6 +327,7 @@ export default function ProfilePage() {
               className="rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
             />
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -342,7 +350,6 @@ export default function ProfilePage() {
         </section>
       </div>
 
-      {/* ORDERS */}
       <section className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -393,7 +400,7 @@ export default function ProfilePage() {
                       </div>
 
                       <Link
-                        href={`/orders/${o.id}`}
+                        href={`/orders/${encodeURIComponent(o.id)}`}
                         className="inline-flex items-center justify-center rounded-full border bg-white px-4 py-2 text-sm hover:bg-gray-50 transition"
                       >
                         Detalji →
@@ -407,7 +414,6 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* FAVORITES */}
       <section className="mt-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Omiljeni</h2>
@@ -458,7 +464,10 @@ export default function ProfilePage() {
                     ⏱ {r.timeMin} min
                   </span>
 
-                  <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="text-sm font-semibold text-gray-900 hover:underline">
+                  <Link
+                    href={`/recipes/${encodeURIComponent(r.id)}`}
+                    className="text-sm font-semibold text-gray-900 hover:underline"
+                  >
                     Detalji →
                   </Link>
                 </div>

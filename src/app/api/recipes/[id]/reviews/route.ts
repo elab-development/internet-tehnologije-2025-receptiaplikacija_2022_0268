@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 async function getCurrentUserIdFromSession() {
   const store = await cookies();
@@ -21,19 +23,32 @@ async function getCurrentUserIdFromSession() {
   return session.userId;
 }
 
+function safeDecodeParam(v: string) {
+  try {
+    const s = decodeURIComponent(v).trim();
+    return s || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
   _req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
-    const recipeId = decodeURIComponent(id);
+    const recipeId = safeDecodeParam(id);
+
+    if (!recipeId) {
+      return NextResponse.json({ error: "Neispravan ID." }, { status: 400 });
+    }
 
     const reviews = await prisma.review.findMany({
       where: { recipeId },
       orderBy: { createdAt: "desc" },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true } },
       },
     });
 
@@ -51,15 +66,26 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!(await verifyCsrf(req))) {
+      return NextResponse.json({ error: "CSRF blocked." }, { status: 403 });
+    }
+
     const { id } = await context.params;
-    const recipeId = decodeURIComponent(id);
+    const recipeId = safeDecodeParam(id);
+
+    if (!recipeId) {
+      return NextResponse.json({ error: "Neispravan ID." }, { status: 400 });
+    }
 
     const body = await req.json().catch(() => null);
     const rating = Number(body?.rating);
-    const comment =
+
+    const commentRaw =
       typeof body?.comment === "string" && body.comment.trim().length > 0
-        ? body.comment.trim()
+        ? body.comment
         : null;
+
+    const comment = commentRaw ? cleanText(commentRaw, 1000) : null;
 
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       return NextResponse.json(
@@ -103,7 +129,7 @@ export async function POST(
         comment,
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true } }, 
       },
     });
 

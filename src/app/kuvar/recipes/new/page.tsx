@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Category = { id: string; name: string };
 
@@ -27,7 +28,7 @@ export default function NewRecipePage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/categories", { cache: "no-store" });
+      const res = await apiFetch("/api/categories", { cache: "no-store" });
       const data = await res.json().catch(() => null);
       if (res.ok && data?.ok) {
         setCats(data.categories ?? []);
@@ -45,7 +46,6 @@ export default function NewRecipePage() {
   }
 
   function parseIngredients() {
-
     return ingredientsText
       .split("\n")
       .map((l) => l.trim())
@@ -55,7 +55,6 @@ export default function NewRecipePage() {
         const ingredientId = parts[0] ?? "";
         const quantityNum = Number(parts[1] ?? "");
         const unit = parts[2] ?? "";
-
         return { ingredientId, quantity: quantityNum, unit };
       })
       .filter((x) => {
@@ -76,8 +75,8 @@ export default function NewRecipePage() {
     if (!Number.isFinite(prepTimeMinutes) || prepTimeMinutes <= 0)
       return setErr("Vreme pripreme mora biti > 0.");
 
-    if (!Number.isFinite(difficulty) || difficulty <= 0)
-      return setErr("Težina mora biti >= 1.");
+    if (!Number.isFinite(difficulty) || difficulty < 1 || difficulty > 5)
+      return setErr("Težina mora biti između 1 i 5.");
 
     if (isPremium && (!Number.isFinite(priceRSD) || priceRSD <= 0))
       return setErr("Za premium recept cena mora biti > 0.");
@@ -86,7 +85,8 @@ export default function NewRecipePage() {
     const ingredients = parseIngredients();
 
     if (steps.length === 0) return setErr("Unesi bar 1 korak pripreme.");
-    if (ingredients.length === 0) return setErr("Unesi bar 1 sastojak (ingredientId | qty | unit).");
+    if (ingredients.length === 0)
+      return setErr("Unesi bar 1 sastojak (ingredientId | qty | unit).");
 
     const body = {
       title: title.trim(),
@@ -102,7 +102,7 @@ export default function NewRecipePage() {
       ingredients,
     };
 
-    const res = await fetch("/api/recipes", {
+    const res = await apiFetch("/api/recipes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -117,7 +117,6 @@ export default function NewRecipePage() {
     router.refresh();
     if (data?.isPublished) router.push("/");
     else router.push("/kuvar/recipes");
-
   }
 
   return (
@@ -127,55 +126,99 @@ export default function NewRecipePage() {
       {err && <p className="mt-4 text-sm text-red-700">{err}</p>}
 
       <div className="mt-6 grid gap-4">
-        <input
-          className="rounded-md border px-3 py-2"
-          placeholder="Naslov (npr. Kremasta testenina sa pečurkama)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <textarea
-          className="rounded-md border px-3 py-2"
-          placeholder="Kratak opis (1-2 rečenice) — šta je recept i za koga je."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-1">
+          <label htmlFor="title" className="text-sm font-medium">
+            Naslov *
+          </label>
           <input
-            type="number"
+            id="title"
             className="rounded-md border px-3 py-2"
-            placeholder="Vreme (min)"
-            value={prepTimeMinutes}
-            onChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
-          />
-          <input
-            type="number"
-            className="rounded-md border px-3 py-2"
-            placeholder="Težina (1-5)"
-            value={difficulty}
-            onChange={(e) => setDifficulty(Number(e.target.value))}
+            placeholder="Naslov (npr. Kremasta testenina sa pečurkama)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
         </div>
 
-        <input
-          className="rounded-md border px-3 py-2"
-          placeholder="Image URL (opciono)"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-        />
+        <div className="grid gap-1">
+          <label htmlFor="description" className="text-sm font-medium">
+            Opis *
+          </label>
+          <textarea
+            id="description"
+            className="rounded-md border px-3 py-2"
+            placeholder="Kratak opis (1-2 rečenice) — šta je recept i za koga je."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+          />
+        </div>
 
-        <select
-          className="rounded-md border px-3 py-2"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-        >
-          {cats.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1">
+            <label htmlFor="prepTimeMinutes" className="text-sm font-medium">
+              Vreme (min) *
+            </label>
+            <input
+              id="prepTimeMinutes"
+              type="number"
+              className="rounded-md border px-3 py-2"
+              placeholder="Vreme (min)"
+              value={prepTimeMinutes}
+              onChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
+              min={1}
+            />
+          </div>
+
+          <div className="grid gap-1">
+            <label htmlFor="difficulty" className="text-sm font-medium">
+              Težina (1-5) *
+            </label>
+            <input
+              id="difficulty"
+              type="number"
+              className="rounded-md border px-3 py-2"
+              placeholder="Težina (1-5)"
+              value={difficulty}
+              onChange={(e) => setDifficulty(Number(e.target.value))}
+              min={1}
+              max={5}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-1">
+          <label htmlFor="imageUrl" className="text-sm font-medium">
+            Image URL (opciono)
+          </label>
+          <input
+            id="imageUrl"
+            className="rounded-md border px-3 py-2"
+            placeholder="Image URL (opciono)"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
+        </div>
+
+        <div className="grid gap-1">
+          <label htmlFor="categoryId" className="text-sm font-medium">
+            Kategorija *
+          </label>
+          <select
+            id="categoryId"
+            className="rounded-md border px-3 py-2"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="" disabled>
+              Izaberi kategoriju
             </option>
-          ))}
-        </select>
+            {cats.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <label className="flex items-center gap-2">
           <input
@@ -187,13 +230,20 @@ export default function NewRecipePage() {
         </label>
 
         {isPremium && (
-          <input
-            type="number"
-            className="rounded-md border px-3 py-2"
-            placeholder="Cena (RSD) — npr. 189"
-            value={priceRSD}
-            onChange={(e) => setPriceRSD(Number(e.target.value))}
-          />
+          <div className="grid gap-1">
+            <label htmlFor="priceRSD" className="text-sm font-medium">
+              Cena (RSD) *
+            </label>
+            <input
+              id="priceRSD"
+              type="number"
+              className="rounded-md border px-3 py-2"
+              placeholder="Cena (RSD) — npr. 189"
+              value={priceRSD}
+              onChange={(e) => setPriceRSD(Number(e.target.value))}
+              min={1}
+            />
+          </div>
         )}
 
         <label className="flex items-center gap-2">
@@ -205,29 +255,41 @@ export default function NewRecipePage() {
           Objavi odmah
         </label>
 
-        <textarea
-          className="rounded-md border px-3 py-2"
-          placeholder={`Priprema — svaka linija je jedan korak:
+        <div className="grid gap-1">
+          <label htmlFor="stepsText" className="text-sm font-medium">
+            Priprema * (svaka linija jedan korak)
+          </label>
+          <textarea
+            id="stepsText"
+            className="rounded-md border px-3 py-2"
+            placeholder={`Priprema — svaka linija je jedan korak:
 1) Iseckaj luk i pečurke.
 2) Prodinstaj luk 2-3 min.
 3) Dodaj pečurke i prži 5-7 min.
 4) Skuvaj testeninu i sjedini sa sosom.`}
-          value={stepsText}
-          onChange={(e) => setStepsText(e.target.value)}
-          rows={7}
-        />
+            value={stepsText}
+            onChange={(e) => setStepsText(e.target.value)}
+            rows={7}
+          />
+        </div>
 
-        <textarea
-          className="rounded-md border px-3 py-2"
-          placeholder={`Sastojci — format: ingredientId | količina | jedinica
+        <div className="grid gap-1">
+          <label htmlFor="ingredientsText" className="text-sm font-medium">
+            Sastojci * (ingredientId | količina | jedinica)
+          </label>
+          <textarea
+            id="ingredientsText"
+            className="rounded-md border px-3 py-2"
+            placeholder={`Sastojci — format: ingredientId | količina | jedinica
 Primer:
 clxSo | 1 | prstohvat
 clxBiber | 1 | prstohvat
 clxParmezan | 30 | g`}
-          value={ingredientsText}
-          onChange={(e) => setIngredientsText(e.target.value)}
-          rows={6}
-        />
+            value={ingredientsText}
+            onChange={(e) => setIngredientsText(e.target.value)}
+            rows={6}
+          />
+        </div>
 
         <button
           onClick={submit}

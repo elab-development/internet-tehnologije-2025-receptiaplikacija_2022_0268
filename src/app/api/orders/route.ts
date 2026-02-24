@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 const SESSION_COOKIE = "session";
 
@@ -15,7 +17,7 @@ async function getCurrentUser() {
     where: { token },
     select: {
       expiresAt: true,
-      user: { select: { id: true, role: true, email: true, name: true } },
+      user: { select: { id: true, role: true } },
     },
   });
 
@@ -26,14 +28,17 @@ async function getCurrentUser() {
 }
 
 type PaymentMethod = "CASH_ON_DELIVERY" | "CARD";
-
 type CartItemDto = {
   kind: "RECIPE" | "INGREDIENT";
   id: string;
-  title: string;
   qty: number;
-  priceRsd: number;
 };
+
+function normalizePhone(v: string) {
+  const cleaned = v.replace(/[^\d+]/g, "");
+  if (cleaned.length < 6 || cleaned.length > 20) return "";
+  return cleaned;
+}
 
 /**
  * @swagger
@@ -61,62 +66,118 @@ export async function POST(req: Request) {
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
 
-  const address = String(body?.address ?? "").trim();
-  const phone = String(body?.phone ?? "").trim();
-  const paymentMethodRaw = String(body?.paymentMethod ?? "").trim();
-  const items = (body?.items ?? []) as CartItemDto[];
+  const address = cleanText(String(body?.address ?? ""), 500);
+  const phoneRaw = cleanText(String(body?.phone ?? ""), 30);
+  const phone = normalizePhone(phoneRaw);
 
-  const paymentMethod = paymentMethodRaw as PaymentMethod;
+  const paymentMethod = String(body?.paymentMethod ?? "").trim() as PaymentMethod;
   const allowedPayments: PaymentMethod[] = ["CASH_ON_DELIVERY", "CARD"];
 
-  if (!address || !phone || !paymentMethodRaw) {
+  const items = (Array.isArray(body?.items) ? body.items : []) as CartItemDto[];
+
+  if (!address || !phone || !allowedPayments.includes(paymentMethod)) {
     return NextResponse.json(
-      { ok: false, error: "Nisu uneti svi podaci za dostavu." },
+      { ok: false, error: "Neispravni podaci za porudžbinu." },
       { status: 400 }
     );
   }
 
-  if (!allowedPayments.includes(paymentMethod)) {
-    return NextResponse.json(
-      { ok: false, error: "Neispravan način plaćanja." },
-      { status: 400 }
-    );
-  }
-
-  if (!Array.isArray(items) || items.length === 0) {
+  if (items.length === 0) {
     return NextResponse.json({ ok: false, error: "Korpa je prazna." }, { status: 400 });
   }
 
   let totalRsd = 0;
+  const orderItems: Array<{
+    kind: "RECIPE" | "INGREDIENT";
+    productId: string;
+    title: string;
+    qty: number;
+    unitPriceRsd: number;
+    lineTotalRsd: number;
+  }> = [];
 
   for (const it of items) {
-    const qty = Number(it.qty);
-    const unit = Number(it.priceRsd);
-
     const kindOk = it?.kind === "RECIPE" || it?.kind === "INGREDIENT";
-    if (!kindOk || !it?.id || !it?.title) {
+    const id = String(it?.id ?? "").trim();
+    const qty = Number(it?.qty);
+
+    if (!kindOk || !id) {
       return NextResponse.json(
         { ok: false, error: "Neispravne stavke u korpi." },
         { status: 400 }
       );
     }
-
-    if (!Number.isFinite(qty) || qty < 1) {
+    if (!Number.isFinite(qty) || qty < 1 || qty > 1000) {
       return NextResponse.json(
         { ok: false, error: "Neispravna količina u korpi." },
         { status: 400 }
       );
     }
-    if (!Number.isFinite(unit) || unit < 0) {
-      return NextResponse.json(
-        { ok: false, error: "Neispravna cena u korpi." },
-        { status: 400 }
-      );
-    }
 
-    totalRsd += qty * unit;
+    if (it.kind === "RECIPE") {
+      const recipe = await prisma.recipe.findUnique({
+        where: { id },
+        select: { id: true, title: true, isPremium: true, priceRSD: true },
+      });
+
+      if (!recipe) {
+        return NextResponse.json(
+          { ok: false, error: "Recept ne postoji." },
+          { status: 400 }
+        );
+      }
+
+      const price = recipe.isPremium ? recipe.priceRSD : 0;
+
+      totalRsd += qty * price;
+
+      orderItems.push({
+        kind: "RECIPE",
+        productId: recipe.id,
+        title: recipe.title,
+        qty,
+        unitPriceRsd: price,
+        lineTotalRsd: qty * price,
+      });
+    } else {
+      const ingredient = await prisma.ingredient.findUnique({
+        where: { id },
+        select: { id: true, name: true, priceRsd: true },
+      });
+
+      if (!ingredient) {
+        return NextResponse.json(
+          { ok: false, error: "Sastojak ne postoji." },
+          { status: 400 }
+        );
+      }
+
+      if (ingredient.priceRsd == null) {
+        return NextResponse.json(
+          { ok: false, error: "Sastojak nema definisanu cenu." },
+          { status: 400 }
+        );
+      }
+
+      const price = ingredient.priceRsd;
+
+      totalRsd += qty * price;
+
+      orderItems.push({
+        kind: "INGREDIENT",
+        productId: ingredient.id,
+        title: ingredient.name,
+        qty,
+        unitPriceRsd: price,
+        lineTotalRsd: qty * price,
+      });
+    }
   }
 
   try {
@@ -125,36 +186,25 @@ export async function POST(req: Request) {
         userId: user.id,
         address,
         phone,
-        paymentMethod: paymentMethod as any,
+        paymentMethod,
         totalRsd,
-        items: {
-          create: items.map((it) => {
-            const qty = Number(it.qty);
-            const unit = Number(it.priceRsd);
-            return {
-              kind: it.kind,
-              productId: it.id,
-              title: it.title,
-              qty,
-              unitPriceRsd: unit,
-              lineTotalRsd: qty * unit,
-            };
-          }),
-        },
+        items: { create: orderItems },
       },
       select: { id: true },
     });
 
-    return NextResponse.json({
-      ok: true,
-      message: "Narudžbina je uspešno kreirana.",
-      orderId: order.id,
-    });
-  } catch (e) {
+    return NextResponse.json(
+      {
+        ok: true,
+        message: "Narudžbina je uspešno kreirana.",
+        orderId: order.id,
+      },
+      { status: 201 }
+    );
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Sistem ne može da kreira narudžbinu." },
       { status: 500 }
     );
   }
 }
-

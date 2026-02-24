@@ -77,6 +77,22 @@ Swagger dokumentacija omogućava pregled svih API ruta, parametara, zahteva i od
 
 _______
 
+API Dokumentacija (Swagger)
+
+Aplikacija poseduje OpenAPI specifikaciju generisanu pomoću Swagger alata.
+
+Swagger UI je dostupan na adresi:
+
+http://localhost:3000/api-docs
+
+OpenAPI JSON specifikacija je dostupna na adresi:
+
+http://localhost:3000/api/swagger
+
+Swagger dokumentacija omogućava pregled svih API ruta, parametara, zahteva i odgovora sistema.
+
+_______
+
 Pokretanje aplikacije – Docker
 1.	Pokrenuti kontejnere: docker compose up –build
 
@@ -102,3 +118,9 @@ Sve izmene i nove funkcionalnosti se prvo razvijaju i testiraju u develop grani.
 ## Vizualizacija podataka
 
 Grafički prikaz broja recepata po kategorijama dostupan je na ruti **/stats** (Google Charts), a podaci se dobijaju preko endpoint-a **/api/stats/recipes-by-category**.
+
+## Produkcioni Deployment (Cloud)
+
+Aplikacija je deployovana na cloud platformi Render kao produkciona verzija sistema.
+Produkcijska verzija dostupna je na adresi:
+https://recepti-app-q6eo.onrender.com

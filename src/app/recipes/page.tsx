@@ -1,10 +1,11 @@
-  "use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-client";
 import MealOfDayCard from "./MealOfDayCard";
+import { apiFetch } from "@/lib/apiFetch";
 
 type RecipeRow = {
   id: string;
@@ -19,6 +20,31 @@ type RecipeRow = {
 };
 
 const FAV_LS_KEY = "favoriteRecipeIds";
+
+function safeParseFavoriteIds(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x) => typeof x === "string");
+  } catch {
+    return [];
+  }
+}
+
+function safeImageSrc(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("/")) return url;
+
+  try {
+    const u = new URL(url);
+    const proto = u.protocol.toLowerCase();
+    if (proto === "http:" || proto === "https:") return url;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function RecipesPage() {
   const router = useRouter();
@@ -35,15 +61,15 @@ export default function RecipesPage() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(FAV_LS_KEY);
-    if (saved) setFavorites(JSON.parse(saved));
+    setFavorites(safeParseFavoriteIds(localStorage.getItem(FAV_LS_KEY)));
   }, []);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       setErr(null);
-      const res = await fetch("/api/recipes", { cache: "no-store" });
+
+      const res = await apiFetch("/api/recipes", { cache: "no-store" });
       const data = await res.json().catch(() => null);
       if (!alive) return;
 
@@ -55,6 +81,7 @@ export default function RecipesPage() {
 
       setRecipes(data.recipes || []);
     })();
+
     return () => {
       alive = false;
     };
@@ -99,26 +126,33 @@ export default function RecipesPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      {/* Predlog dana iz eksternog API-ja */}
       <MealOfDayCard />
 
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight">Recepti</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Pronađi ideju za ručak, večeru ili nešto slatko.
-          </p>
+          <p className="mt-1 text-sm text-gray-600">Pronađi ideju za ručak, večeru ili nešto slatko.</p>
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <label htmlFor="recipesSearch" className="sr-only">
+            Pretraga recepata
+          </label>
           <input
+            id="recipesSearch"
+            name="recipesSearch"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Pretraga (npr. pasta, piletina...)"
             className="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300 sm:w-80"
           />
 
+          <label htmlFor="recipesCategory" className="sr-only">
+            Filtriranje po kategoriji
+          </label>
           <select
+            id="recipesCategory"
+            name="recipesCategory"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-300 sm:w-56"
@@ -142,6 +176,7 @@ export default function RecipesPage() {
         {filtered.map((r) => {
           const isFav = favorites.includes(r.id);
           const catName = String(r.category?.name ?? "Ostalo");
+          const img = safeImageSrc(r.imageUrl);
 
           return (
             <div
@@ -150,11 +185,11 @@ export default function RecipesPage() {
             >
               <Link href={`/recipes/${encodeURIComponent(r.id)}`} className="block">
                 <div className="relative h-48 w-full bg-gradient-to-br from-amber-100 to-rose-100">
-                  {r.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                  {img ? (
                     <img
-                      src={r.imageUrl}
+                      src={img}
                       alt={r.title}
+                      referrerPolicy="no-referrer"
                       className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                     />
                   ) : (

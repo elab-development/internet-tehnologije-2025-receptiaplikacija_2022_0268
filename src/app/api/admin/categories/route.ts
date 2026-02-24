@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -30,8 +32,13 @@ export async function POST(req: Request) {
     );
   }
 
+  if (!verifyCsrf(req)) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
-  const name = body?.name?.trim();
+  const rawName = String(body?.name ?? "");
+  const name = cleanText(rawName, 80); 
 
   if (!name) {
     return NextResponse.json(
@@ -47,10 +54,17 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, category }, { status: 201 });
-  } catch {
+  } catch (e: any) {
+    if (e?.code === "P2002") {
+      return NextResponse.json(
+        { ok: false, error: "Kategorija sa tim nazivom već postoji." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      { ok: false, error: "Kategorija sa tim nazivom već postoji." },
-      { status: 409 }
+      { ok: false, error: "Greška pri kreiranju kategorije." },
+      { status: 500 }
     );
   }
 }

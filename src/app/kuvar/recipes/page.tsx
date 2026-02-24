@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Row = {
   id: string;
@@ -21,7 +22,7 @@ export default function KuvarRecipesPage() {
     setLoading(true);
     setErr(null);
 
-    const res = await fetch("/api/kuvar/recipes", { cache: "no-store" });
+    const res = await apiFetch("/api/kuvar/recipes", { cache: "no-store" });
     const data = await res.json().catch(() => null);
 
     if (!res.ok || !data?.ok) {
@@ -42,7 +43,7 @@ export default function KuvarRecipesPage() {
   async function del(id: string) {
     if (!confirm("Obriši recept?")) return;
 
-    const res = await fetch(`/api/kuvar/recipes/${encodeURIComponent(id)}`, {
+    const res = await apiFetch(`/api/kuvar/recipes/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
     const data = await res.json().catch(() => null);
@@ -83,6 +84,7 @@ export default function KuvarRecipesPage() {
             >
               <div className="min-w-0">
                 <div className="font-medium">{r.title}</div>
+
                 <div className="text-sm text-gray-600">
                   {r.category?.name ?? "Ostalo"} •{" "}
                   {r.isPublished ? "Objavljen" : "Nije objavljen"}

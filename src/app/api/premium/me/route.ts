@@ -12,6 +12,4 @@ export async function GET() {
   });
 
   if (!user || user.isBlocked) return NextResponse.json({ ok: true });
-
-
 }
