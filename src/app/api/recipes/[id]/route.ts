@@ -61,7 +61,7 @@ async function getCurrentUserLite() {
  *       403: { description: Nema prava }
  *       404: { description: Nije pronađen }
  *   delete:
- *     summary: Brisanje recepta (admin ili vlasnik ako imate)
+ *     summary: Brisanje recepta (admin ili vlasnik)
  *     tags: [Recipes]
  *     parameters:
  *       - in: path

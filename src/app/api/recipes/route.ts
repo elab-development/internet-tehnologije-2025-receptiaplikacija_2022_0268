@@ -32,7 +32,7 @@ async function getCurrentUserLite() {
  * @swagger
  * /api/recipes:
  *   get:
- *     summary: Lista recepata (pretraga/filtriranje ako postoji)
+ *     summary: Lista recepata (pretraga/filtriranje)
  *     tags: [Recipes]
  *     responses:
  *       200: { description: Lista recepata }
