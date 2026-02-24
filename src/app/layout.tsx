@@ -5,6 +5,9 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/lib/auth-client";
 import { CartProvider } from "@/context/CartContext";
+import Link from "next/link";
+
+<Link href="/api-docs">Swagger</Link>
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

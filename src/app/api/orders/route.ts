@@ -35,6 +35,17 @@ type CartItemDto = {
   priceRsd: number;
 };
 
+/**
+ * @swagger
+ * /api/orders:
+ *   post:
+ *     summary: Kreira porudžbinu (kupovina)
+ *     tags: [Orders]
+ *     responses:
+ *       201: { description: Porudžbina kreirana }
+ *       401: { description: Nije prijavljen }
+ */
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) {

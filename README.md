@@ -61,6 +61,22 @@ http://localhost:3000
 
 ⸻
 
+API Dokumentacija (Swagger)
+
+Aplikacija poseduje OpenAPI specifikaciju generisanu pomoću Swagger alata.
+
+Swagger UI je dostupan na adresi:
+
+http://localhost:3000/api-docs
+
+OpenAPI JSON specifikacija je dostupna na adresi:
+
+http://localhost:3000/api/swagger
+
+Swagger dokumentacija omogućava pregled svih API ruta, parametara, zahteva i odgovora sistema.
+
+_______
+
 Pokretanje aplikacije – Docker
 1.	Pokrenuti kontejnere: docker compose up –build
 
@@ -82,3 +98,7 @@ Za rad aplikacije neophodno je da je PostgreSQL baza pokrenuta (lokalno ili u Do
 
 Ova grana služi za razvoj i integraciju novih funkcionalnosti pre spajanja u main granu. 
 Sve izmene i nove funkcionalnosti se prvo razvijaju i testiraju u develop grani.
+
+## Vizualizacija podataka
+
+Grafički prikaz broja recepata po kategorijama dostupan je na ruti **/stats** (Google Charts), a podaci se dobijaju preko endpoint-a **/api/stats/recipes-by-category**.
