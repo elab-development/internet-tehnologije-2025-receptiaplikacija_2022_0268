@@ -77,6 +77,22 @@ Swagger dokumentacija omogućava pregled svih API ruta, parametara, zahteva i od
 
 _______
 
+API Dokumentacija (Swagger)
+
+Aplikacija poseduje OpenAPI specifikaciju generisanu pomoću Swagger alata.
+
+Swagger UI je dostupan na adresi:
+
+http://localhost:3000/api-docs
+
+OpenAPI JSON specifikacija je dostupna na adresi:
+
+http://localhost:3000/api/swagger
+
+Swagger dokumentacija omogućava pregled svih API ruta, parametara, zahteva i odgovora sistema.
+
+_______
+
 Pokretanje aplikacije – Docker
 1.	Pokrenuti kontejnere: docker compose up –build
 

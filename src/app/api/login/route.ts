@@ -56,6 +56,27 @@ function normalizeEmail(v: any) {
  *       401: { description: Neispravni kredencijali }
  */
 
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Prijava korisnika
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200: { description: Uspešna prijava }
+ *       401: { description: Neispravni kredencijali }
+ */
+
 export async function POST(req: Request) {
   const ip = getIp(req);
   if (isRateLimited(ip)) {
