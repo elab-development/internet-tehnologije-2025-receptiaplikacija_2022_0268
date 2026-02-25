@@ -16,7 +16,6 @@ type OrderItemDto = {
 
 type OrderStatus = "CREATED" | "PAID" | "CANCELLED";
 
-
 type OrderDto = {
   id: string;
   address: string;
@@ -27,6 +26,25 @@ type OrderDto = {
   createdAt: string;
   items: OrderItemDto[];
 };
+
+function getCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return m ? decodeURIComponent(m[2]) : "";
+}
+
+async function apiFetch(url: string, options: RequestInit = {}) {
+  const csrf = getCookie("csrf");
+  const headers = new Headers(options.headers || {});
+
+  if (csrf) headers.set("x-csrf-token", csrf);
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "include", 
+  });
+}
 
 export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -45,7 +63,7 @@ export default function OrderDetailsPage() {
     setLoading(true);
     setErr(null);
 
-    const res = await fetch(`/api/orders/${orderId}`, { cache: "no-store" });
+    const res = await apiFetch(`/api/orders/${orderId}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
@@ -74,7 +92,7 @@ export default function OrderDetailsPage() {
 
     setCanceling(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/cancel`, {
+      const res = await apiFetch(`/api/orders/${order.id}/cancel`, {
         method: "POST",
       });
       const data = await res.json().catch(() => null);
@@ -114,12 +132,11 @@ export default function OrderDetailsPage() {
   }
 
   const statusLabel =
-  order.status === "CREATED"
-    ? "Kreirana"
-    : order.status === "PAID"
-    ? "Plaćena"
-    : "Otkazana";
-
+    order.status === "CREATED"
+      ? "Kreirana"
+      : order.status === "PAID"
+      ? "Plaćena"
+      : "Otkazana";
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">

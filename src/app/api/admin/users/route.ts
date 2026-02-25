@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 
-export async function GET() {
+export async function GET(req: Request) {
   const guard = await requireAdmin();
   if (!guard.ok) {
     return NextResponse.json(
@@ -13,8 +13,28 @@ export async function GET() {
     );
   }
 
+  const { searchParams } = new URL(req.url);
+  const take = Math.min(Math.max(Number(searchParams.get("take") ?? 50), 1), 200);
+  const skip = Math.max(Number(searchParams.get("skip") ?? 0), 0);
+  const q = (searchParams.get("q") ?? "").trim();
+
+  const where =
+    q.length > 0
+      ? {
+          OR: [
+            { email: { contains: q, mode: "insensitive" as const } },
+            { name: { contains: q, mode: "insensitive" as const } },
+            { firstName: { contains: q, mode: "insensitive" as const } },
+            { lastName: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
+
   const users = await prisma.user.findMany({
+    where,
     orderBy: { createdAt: "desc" },
+    take,
+    skip,
     select: {
       id: true,
       email: true,
@@ -29,5 +49,5 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ ok: true, users });
+  return NextResponse.json({ ok: true, users, page: { take, skip, q } });
 }

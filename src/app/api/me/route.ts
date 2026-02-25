@@ -3,10 +3,12 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 async function getUserIdFromToken() {
-  const store: any = await cookies();
-  const token = store?.get?.("session")?.value;
+  const store = await cookies();
+  const token = store.get("session")?.value;
   if (!token) return null;
 
   const dbSession = await prisma.session.findUnique({
@@ -25,6 +27,13 @@ function isUniqueConstraintError(err: any) {
   if (err.code === "P2002") return true;
   const msg = String(err.message ?? "");
   return msg.toLowerCase().includes("unique");
+}
+
+function normalizePhone(v: string | null) {
+  if (!v) return null;
+  const cleaned = v.replace(/[^\d+]/g, "");
+  if (cleaned.length < 6 || cleaned.length > 20) return null;
+  return cleaned;
 }
 
 export async function GET() {
@@ -79,13 +88,18 @@ export async function PUT(req: Request) {
       );
     }
 
+    if (!(await verifyCsrf(req))) {
+      return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+    }
+
     const body = await req.json().catch(() => ({}));
 
-    const name = typeof body.name === "string" ? body.name.trim() : null;
-    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : null;
-    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : null;
+    const name = body.name ? cleanText(String(body.name), 120) : null;
+    const firstName = body.firstName ? cleanText(String(body.firstName), 80) : null;
+    const lastName = body.lastName ? cleanText(String(body.lastName), 80) : null;
+
     const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : "";
-    const phone = phoneRaw.length > 0 ? phoneRaw : null;
+    const phone = normalizePhone(phoneRaw);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -99,9 +113,20 @@ export async function PUT(req: Request) {
       );
     }
 
-    const updated = await prisma.user.update({
+    const updated = await prisma.user.updateMany({
       where: { id: userId },
       data: { name, firstName, lastName, phone },
+    });
+
+    if (updated.count === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Nalog nije pronađen." },
+        { status: 404 }
+      );
+    }
+
+    const fresh = await prisma.user.findUnique({
+      where: { id: userId },
       select: {
         id: true,
         email: true,
@@ -113,7 +138,7 @@ export async function PUT(req: Request) {
       },
     });
 
-    return NextResponse.json({ ok: true, user: updated }, { status: 200 });
+    return NextResponse.json({ ok: true, user: fresh }, { status: 200 });
   } catch (err: any) {
     if (isUniqueConstraintError(err)) {
       return NextResponse.json({ ok: false, error: "PHONE_TAKEN" }, { status: 409 });

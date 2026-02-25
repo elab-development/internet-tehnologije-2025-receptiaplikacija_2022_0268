@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 export async function PATCH(
   req: Request,
@@ -18,8 +20,13 @@ export async function PATCH(
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
-  const name = body?.name?.trim();
+  const rawName = String(body?.name ?? "");
+  const name = cleanText(rawName, 80);
 
   if (!name) {
     return NextResponse.json(
@@ -36,21 +43,25 @@ export async function PATCH(
   }
 
   try {
-    const category = await prisma.categoryRecipe.update({
+    const updated = await prisma.categoryRecipe.updateMany({
       where: { id },
       data: { name },
-      select: { id: true, name: true },
     });
 
-    return NextResponse.json({ ok: true, category });
-  } catch (e: any) {
-    if (e?.code === "P2025") {
+    if (updated.count === 0) {
       return NextResponse.json(
         { ok: false, error: "Kategorija nije pronađena." },
         { status: 404 }
       );
     }
 
+    const category = await prisma.categoryRecipe.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+
+    return NextResponse.json({ ok: true, category });
+  } catch (e: any) {
     if (e?.code === "P2002") {
       return NextResponse.json(
         { ok: false, error: "Naziv kategorije već postoji." },
@@ -66,7 +77,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -77,6 +88,10 @@ export async function DELETE(
       { ok: false, error: "Nemate admin prava." },
       { status: 403 }
     );
+  }
+
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
   }
 
   try {
@@ -91,20 +106,19 @@ export async function DELETE(
       );
     }
 
-    await prisma.categoryRecipe.delete({ where: { id } });
-
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    if (e?.code === "P2025") {
+    const deleted = await prisma.categoryRecipe.deleteMany({ where: { id } });
+    if (deleted.count === 0) {
       return NextResponse.json(
         { ok: false, error: "Kategorija nije pronađena." },
         { status: 404 }
       );
     }
 
+    return NextResponse.json({ ok: true });
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Brisanje nije uspelo." },
-      { status: 409 }
+      { status: 500 }
     );
   }
 }

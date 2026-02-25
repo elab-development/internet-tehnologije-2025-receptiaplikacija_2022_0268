@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
+import { verifyCsrf } from "@/lib/csrf";
+import { cleanText } from "@/lib/sanitize";
 
 async function getUserFromSession() {
   const store = await cookies();
@@ -92,10 +94,17 @@ export async function POST(req: Request) {
     const blocked = forbidAdmin(user.role);
     if (blocked) return blocked;
 
+    if (!(await verifyCsrf(req))) {
+      return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+    }
+
     const body = await req.json().catch(() => null);
-    const name = String(body?.name ?? "").trim();
-    const quantity = Number(body?.quantity ?? 1);
-    const unit = String(body?.unit ?? "kom").trim() || "kom";
+
+    const name = cleanText(String(body?.name ?? ""), 120);
+    const unit = cleanText(String(body?.unit ?? "kom"), 20) || "kom";
+
+    const quantityRaw = Number(body?.quantity ?? 1);
+    const quantity = Number.isFinite(quantityRaw) ? quantityRaw : NaN;
 
     if (!name) {
       return NextResponse.json(
@@ -103,7 +112,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (!Number.isFinite(quantity) || quantity <= 0) {
+
+    if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 1000) {
       return NextResponse.json(
         { ok: false, error: "Neispravna quantity." },
         { status: 400 }
@@ -158,8 +168,12 @@ export async function DELETE(req: Request) {
     const blocked = forbidAdmin(user.role);
     if (blocked) return blocked;
 
+    if (!(await verifyCsrf(req))) {
+      return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
-    const itemId = searchParams.get("itemId");
+    const itemId = (searchParams.get("itemId") ?? "").trim();
 
     if (!itemId) {
       return NextResponse.json(

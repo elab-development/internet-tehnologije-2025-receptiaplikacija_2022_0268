@@ -560,17 +560,23 @@ async function seedRecipes() {
   console.log(`Ubaceno recepata: ${created}`);
 }
 
-async function main() {
+export async function seedAll() {
   await seedUsers();
   await seedIngredientsWithMeta();
   await seedRecipes();
 }
 
-main()
-  .catch((e) => {
-    console.error("❌ Seed error:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+async function main() {
+  await seedAll();
+}
+
+if (require.main === module) {
+  main()
+    .catch((e) => {
+      console.error("❌ Seed error:", e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

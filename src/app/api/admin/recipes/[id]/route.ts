@@ -3,9 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -18,27 +19,34 @@ export async function DELETE(
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   try {
-    await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
-    await prisma.step.deleteMany({ where: { recipeId: id } });
-    await prisma.review.deleteMany({ where: { recipeId: id } });
-    await prisma.favorite.deleteMany({ where: { recipeId: id } });
-    await prisma.recipePurchase.deleteMany({ where: { recipeId: id } });
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      await tx.step.deleteMany({ where: { recipeId: id } });
+      await tx.review.deleteMany({ where: { recipeId: id } });
+      await tx.favorite.deleteMany({ where: { recipeId: id } });
+      await tx.recipePurchase.deleteMany({ where: { recipeId: id } });
 
-    await prisma.recipe.delete({ where: { id } });
+      const deleted = await tx.recipe.deleteMany({ where: { id } });
+      return deleted.count;
+    });
 
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    if (e?.code === "P2025") {
+    if (result === 0) {
       return NextResponse.json(
         { ok: false, error: "Recept nije pronađen." },
         { status: 404 }
       );
     }
 
+    return NextResponse.json({ ok: true });
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Brisanje recepta nije uspelo." },
-      { status: 409 }
+      { status: 500 }
     );
   }
 }

@@ -3,9 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function PATCH(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -18,6 +19,10 @@ export async function PATCH(
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   if (id === guard.user.id) {
     return NextResponse.json(
       { ok: false, error: "Ne možete blokirati sopstveni nalog." },
@@ -26,23 +31,35 @@ export async function PATCH(
   }
 
   try {
-    const updated = await prisma.user.update({
-      where: { id },
-      data: { isBlocked: true },
-      select: { id: true, email: true, role: true, isBlocked: true },
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.updateMany({
+        where: { id },
+        data: { isBlocked: true },
+      });
+
+      if (updated.count === 0) {
+        return { ok: false as const, status: 404 as const, user: null };
+      }
+
+      await tx.session.deleteMany({ where: { userId: id } });
+
+      const user = await tx.user.findUnique({
+        where: { id },
+        select: { id: true, email: true, role: true, isBlocked: true },
+      });
+
+      return { ok: true as const, status: 200 as const, user };
     });
 
-    await prisma.session.deleteMany({ where: { userId: id } });
-
-    return NextResponse.json({ ok: true, user: updated });
-  } catch (e: any) {
-    if (e?.code === "P2025") {
+    if (!result.ok) {
       return NextResponse.json(
         { ok: false, error: "Korisnik nije pronađen." },
-        { status: 404 }
+        { status: result.status }
       );
     }
 
+    return NextResponse.json({ ok: true, user: result.user });
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Greška pri blokiranju korisnika." },
       { status: 500 }

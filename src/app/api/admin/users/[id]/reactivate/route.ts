@@ -3,9 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
+import { verifyCsrf } from "@/lib/csrf";
 
 export async function PATCH(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -18,22 +19,30 @@ export async function PATCH(
     );
   }
 
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ ok: false, error: "CSRF blocked." }, { status: 403 });
+  }
+
   try {
-    const updated = await prisma.user.update({
+    const updated = await prisma.user.updateMany({
       where: { id },
       data: { isBlocked: false },
-      select: { id: true, email: true, role: true, isBlocked: true },
     });
 
-    return NextResponse.json({ ok: true, user: updated });
-  } catch (e: any) {
-    if (e?.code === "P2025") {
+    if (updated.count === 0) {
       return NextResponse.json(
         { ok: false, error: "Korisnik nije pronađen." },
         { status: 404 }
       );
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, role: true, isBlocked: true },
+    });
+
+    return NextResponse.json({ ok: true, user });
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Greška pri reaktivaciji korisnika." },
       { status: 500 }

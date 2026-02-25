@@ -7,9 +7,36 @@ import { useCart } from "@/context/CartContext";
 import ReviewsSection from "@/components/ReviewsSection";
 import NutritionSearch from "@/components/NutritionSearch";
 import { useAuth } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/apiFetch";
 
 const FAV_LS_KEY = "favoriteRecipeIds";
 const PREMIUM_LS_KEY = "purchasedPremiumRecipeIds";
+
+function safeParseIds(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x) => typeof x === "string");
+  } catch {
+    return [];
+  }
+}
+
+function safeImageSrc(url: string | null): string | null {
+  if (!url) return null;
+
+  if (url.startsWith("/")) return url;
+
+  try {
+    const u = new URL(url);
+    const proto = u.protocol.toLowerCase();
+    if (proto === "http:" || proto === "https:") return url;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function RecipeDetailsPage() {
   const router = useRouter();
@@ -39,11 +66,8 @@ export default function RecipeDetailsPage() {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const savedFav = localStorage.getItem(FAV_LS_KEY);
-    if (savedFav) setFavorites(JSON.parse(savedFav));
-
-    const savedPremium = localStorage.getItem(PREMIUM_LS_KEY);
-    if (savedPremium) setPurchased(JSON.parse(savedPremium));
+    setFavorites(safeParseIds(localStorage.getItem(FAV_LS_KEY)));
+    setPurchased(safeParseIds(localStorage.getItem(PREMIUM_LS_KEY)));
   }, []);
 
   useEffect(() => {
@@ -57,7 +81,7 @@ export default function RecipeDetailsPage() {
         return;
       }
 
-      const res = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+      const res = await apiFetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok || !data?.recipe) {
@@ -74,7 +98,6 @@ export default function RecipeDetailsPage() {
   }, [id]);
 
   const toggleFavorite = () => {
-
     if (loadingAuth) return;
     if (!user?.id) {
       router.push(`/login?next=${encodeURIComponent(pathname)}`);
@@ -89,14 +112,13 @@ export default function RecipeDetailsPage() {
   };
 
   const buyPremium = async () => {
-
     if (loadingAuth) return;
     if (!user?.id) {
       router.push(`/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    const res = await fetch(`/api/recipes/${encodeURIComponent(id)}/purchase`, {
+    const res = await apiFetch(`/api/recipes/${encodeURIComponent(id)}/purchase`, {
       method: "POST",
     });
     const data = await res.json().catch(() => null);
@@ -113,7 +135,7 @@ export default function RecipeDetailsPage() {
       return updated;
     });
 
-    const r2 = await fetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
+    const r2 = await apiFetch(`/api/recipes/${encodeURIComponent(id)}`, { cache: "no-store" });
     const d2 = await r2.json().catch(() => null);
     if (r2.ok && d2?.ok && d2?.recipe) {
       setRecipe(d2.recipe);
@@ -147,7 +169,7 @@ export default function RecipeDetailsPage() {
   const isFav = favorites.includes(id);
 
   const priceRsd = recipe.isPremium ? Number(recipe.priceRSD ?? 0) : 0;
-  const imageUrl = recipe.imageUrl ?? null;
+  const imageUrl = safeImageSrc(recipe.imageUrl ?? null);
 
   const addRecipeToCart = () => {
     if (locked) return;
@@ -173,8 +195,12 @@ export default function RecipeDetailsPage() {
       <div className="mt-5 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="relative h-64 w-full bg-gradient-to-br from-amber-100 to-rose-100">
           {imageUrl ? (
-
-            <img src={imageUrl} alt={recipe.title} className="h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={recipe.title}
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-5xl">🍲</div>
           )}
@@ -259,8 +285,6 @@ export default function RecipeDetailsPage() {
           </div>
         </div>
       ) : (
-
-
         <>
           <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Opis</h2>
@@ -281,7 +305,10 @@ export default function RecipeDetailsPage() {
 
             <ul className="mt-4 space-y-2">
               {(recipe.ingredients ?? []).map((x: any, idx: number) => (
-                <li key={idx} className="flex items-start gap-3 rounded-2xl bg-amber-50/60 px-4 py-3 text-sm text-gray-800">
+                <li
+                  key={idx}
+                  className="flex items-start gap-3 rounded-2xl bg-amber-50/60 px-4 py-3 text-sm text-gray-800"
+                >
                   <span className="mt-0.5">✅</span>
                   <span>
                     {x.ingredient?.name} — {x.quantity} {x.unit}
